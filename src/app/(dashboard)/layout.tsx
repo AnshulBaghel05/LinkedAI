@@ -1,0 +1,127 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { Linkedin, LayoutDashboard, Wand2, Calendar, FileText, Clock, Settings, LogOut, Menu, X, Sparkles } from 'lucide-react'
+import { Toaster } from 'react-hot-toast'
+
+const navItems = [
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/generate', icon: Wand2, label: 'Generate' },
+  { href: '/templates', icon: Sparkles, label: 'Templates' },
+  { href: '/drafts', icon: FileText, label: 'Drafts' },
+  { href: '/calendar', icon: Calendar, label: 'Calendar' },
+  { href: '/scheduled', icon: Clock, label: 'Scheduled' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
+]
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const router = useRouter()
+  const pathname = usePathname()
+  const supabase = createClient()
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        router.push('/login')
+      } else {
+        setLoading(false)
+      }
+    }
+    checkAuth()
+  }, [router, supabase.auth])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#0a66c2] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex">
+      <Toaster position="top-right" />
+
+      {/* Mobile menu button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md"
+      >
+        {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 z-40
+        w-64 bg-white border-r border-gray-200 flex flex-col
+        transform transition-transform duration-200 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="p-6 border-b border-gray-100">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="w-10 h-10 bg-[#0a66c2] rounded-xl flex items-center justify-center">
+              <Linkedin className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xl font-bold text-gray-900">LinkedAI</span>
+          </Link>
+        </div>
+
+        <nav className="flex-1 px-4 py-4">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`
+                  flex items-center gap-3 px-4 py-3 rounded-xl transition mb-1
+                  ${isActive
+                    ? 'bg-[#0a66c2]/10 text-[#0a66c2] font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}
+                `}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.label}
+              </Link>
+            )
+          })}
+        </nav>
+
+        <div className="p-4 border-t border-gray-100">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-xl transition w-full"
+          >
+            <LogOut className="w-5 h-5" />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main content */}
+      <main className="flex-1 overflow-auto">
+        {children}
+      </main>
+    </div>
+  )
+}
