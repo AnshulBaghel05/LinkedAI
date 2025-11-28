@@ -232,11 +232,13 @@ export default function LinkedInAccountsManager({
                           Primary
                         </span>
                       )}
-                      {account.is_active ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" title="Active" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-orange-500" title="Inactive" />
-                      )}
+                      <div title={account.is_active ? "Active" : "Inactive"}>
+                        {account.is_active ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-orange-500" />
+                        )}
+                      </div>
                     </div>
 
                     {account.profile_headline && (

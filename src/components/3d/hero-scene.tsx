@@ -147,6 +147,7 @@ function Particles({ count = 100 }) {
           count={points.length / 3}
           array={points}
           itemSize={3}
+          args={[points, 3]}
         />
       </bufferGeometry>
       <pointsMaterial size={0.05} color="#6366f1" transparent opacity={0.6} sizeAttenuation />
@@ -186,7 +187,6 @@ export function HeroScene() {
             rotation={[0, 0, 0]}
             polar={[-0.2, 0.2]}
             azimuth={[-0.5, 0.5]}
-            config={{ mass: 2, tension: 400 }}
           >
             <LinkedInLogo />
             <AIBrain />

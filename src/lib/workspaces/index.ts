@@ -550,7 +550,7 @@ export async function checkWorkspacePermission(params: {
       owner: 4,
     }
 
-    return roleHierarchy[member.role] >= roleHierarchy[requiredRole]
+    return roleHierarchy[member.role as WorkspaceRole] >= roleHierarchy[requiredRole]
   } catch {
     return false
   }

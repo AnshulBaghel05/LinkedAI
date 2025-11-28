@@ -44,14 +44,14 @@ export async function syncAnalyticsForAllUsers(): Promise<{
     }
 
     // Get unique user IDs
-    const uniqueUserIds = [...new Set(users?.map((u) => u.user_id) || [])]
+    const uniqueUserIds = [...new Set(users?.map((u: { user_id: string }) => u.user_id) || [])]
     console.log(`[Analytics Sync] Found ${uniqueUserIds.length} users with recent posts`)
 
     // Sync each user's analytics
     for (const userId of uniqueUserIds) {
       try {
         console.log(`[Analytics Sync] Syncing analytics for user ${userId}`)
-        const result = await syncAllPostAnalytics(userId)
+        const result = await syncAllPostAnalytics(userId as string)
 
         if (result.success) {
           usersSynced++
@@ -149,7 +149,7 @@ export async function getAnalyticsSyncStatus(userId: string): Promise<{
       .not('linkedin_post_id', 'is', null)
 
     const totalPosts = posts?.length || 0
-    const postsWithAnalytics = posts?.filter((p) => p.post_analytics).length || 0
+    const postsWithAnalytics = posts?.filter((p: { post_analytics: any }) => p.post_analytics).length || 0
     const needsSync = totalPosts - postsWithAnalytics
 
     // Get last sync time

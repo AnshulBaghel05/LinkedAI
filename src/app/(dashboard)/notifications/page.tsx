@@ -158,14 +158,14 @@ export default function NotificationsPage() {
           <div className="flex items-center gap-2">
             <Button
               onClick={() => setFilter('all')}
-              variant={filter === 'all' ? 'default' : 'outline'}
+              variant={filter === 'all' ? 'secondary' : 'outline'}
               size="sm"
             >
               All
             </Button>
             <Button
               onClick={() => setFilter('unread')}
-              variant={filter === 'unread' ? 'default' : 'outline'}
+              variant={filter === 'unread' ? 'secondary' : 'outline'}
               size="sm"
             >
               Unread ({unreadCount})
