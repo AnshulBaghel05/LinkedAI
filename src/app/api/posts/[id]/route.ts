@@ -4,9 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 // Update post
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -29,7 +30,7 @@ export async function PATCH(
     const { data: post, error } = await supabase
       .from('posts')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .select()
       .single()
@@ -58,9 +59,10 @@ export async function PATCH(
 // Delete post
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -71,7 +73,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('posts')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
 
     if (error) {

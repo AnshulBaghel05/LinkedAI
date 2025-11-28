@@ -8,9 +8,10 @@ import { getWorkspaceMembers, checkWorkspacePermission } from '@/lib/workspaces'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { workspaceId: string } }
+  { params }: { params: Promise<{ workspaceId: string }> }
 ) {
   try {
+    const { workspaceId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -19,8 +20,6 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const { workspaceId } = params
 
     // Check if user has access to this workspace
     const hasAccess = await checkWorkspacePermission({
@@ -55,9 +54,10 @@ export async function GET(
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { workspaceId: string } }
+  { params }: { params: Promise<{ workspaceId: string }> }
 ) {
   try {
+    const { workspaceId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -66,8 +66,6 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const { workspaceId } = params
 
     // Check if user is admin or owner
     const hasAccess = await checkWorkspacePermission({

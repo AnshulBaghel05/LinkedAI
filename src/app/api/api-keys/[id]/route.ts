@@ -8,9 +8,10 @@ import { revokeAPIKey, deleteAPIKey } from '@/lib/api-keys'
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -24,7 +25,7 @@ export async function PATCH(
     const { action } = body
 
     if (action === 'revoke') {
-      const result = await revokeAPIKey(params.id, user.id)
+      const result = await revokeAPIKey(id, user.id)
 
       if (!result.success) {
         return NextResponse.json({ error: result.error }, { status: 400 })
@@ -52,9 +53,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -64,7 +66,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const result = await deleteAPIKey(params.id, user.id)
+    const result = await deleteAPIKey(id, user.id)
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 })

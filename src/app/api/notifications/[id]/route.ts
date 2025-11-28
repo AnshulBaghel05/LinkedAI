@@ -8,9 +8,10 @@ import { markNotificationRead, deleteNotification } from '@/lib/notifications'
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -24,7 +25,7 @@ export async function PATCH(
     const { action } = body
 
     if (action === 'mark_read') {
-      const result = await markNotificationRead(params.id)
+      const result = await markNotificationRead(id)
 
       if (!result.success) {
         return NextResponse.json({ error: result.error }, { status: 400 })
@@ -49,9 +50,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -61,7 +63,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const result = await deleteNotification(params.id)
+    const result = await deleteNotification(id)
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 })

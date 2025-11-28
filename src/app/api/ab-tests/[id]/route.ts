@@ -7,9 +7,10 @@ import { determineWinner, calculateEngagementRate } from '@/lib/ab-testing'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -49,7 +50,7 @@ export async function GET(
           )
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -65,7 +66,7 @@ export async function GET(
     const { data: analytics } = await supabase
       .from('ab_test_analytics')
       .select('*')
-      .eq('ab_test_id', params.id)
+      .eq('ab_test_id', id)
       .order('snapshot_at', { ascending: true })
 
     // Calculate winner if test is active or completed
@@ -107,9 +108,10 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const adminClient = createAdminClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -125,7 +127,7 @@ export async function PATCH(
     const { data: test } = await supabase
       .from('ab_tests')
       .select('*, variants:ab_test_variants(*)')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -147,7 +149,7 @@ export async function PATCH(
           status: 'active',
           started_at: new Date().toISOString(),
         })
-        .eq('id', params.id)
+        .eq('id', id)
 
       if (updateError) {
         return NextResponse.json(
@@ -168,14 +170,14 @@ export async function PATCH(
       }
 
       // Create initial analytics snapshot
-      await adminClient.rpc('create_ab_test_snapshot', { test_id: params.id })
+      await adminClient.rpc('create_ab_test_snapshot', { test_id: id })
 
     } else if (action === 'pause') {
       // Pause the test
       await adminClient
         .from('ab_tests')
         .update({ status: 'paused' })
-        .eq('id', params.id)
+        .eq('id', id)
 
     } else if (action === 'complete') {
       // Complete the test
@@ -185,7 +187,7 @@ export async function PATCH(
           status: 'completed',
           ended_at: new Date().toISOString(),
         })
-        .eq('id', params.id)
+        .eq('id', id)
 
     } else if (action === 'select_winner') {
       // Select winner and optionally promote it
@@ -204,13 +206,13 @@ export async function PATCH(
           status: 'completed',
           ended_at: new Date().toISOString(),
         })
-        .eq('id', params.id)
+        .eq('id', id)
 
       // Mark winner variant
       await adminClient
         .from('ab_test_variants')
         .update({ is_winner: false })
-        .eq('ab_test_id', params.id)
+        .eq('ab_test_id', id)
 
       await adminClient
         .from('ab_test_variants')
@@ -233,14 +235,14 @@ export async function PATCH(
       await adminClient.rpc('sync_variant_metrics')
 
       // Create new analytics snapshot
-      await adminClient.rpc('create_ab_test_snapshot', { test_id: params.id })
+      await adminClient.rpc('create_ab_test_snapshot', { test_id: id })
 
     } else {
       // Regular update
       const { error: updateError } = await adminClient
         .from('ab_tests')
         .update(updateData)
-        .eq('id', params.id)
+        .eq('id', id)
         .eq('user_id', user.id)
 
       if (updateError) {
@@ -270,7 +272,7 @@ export async function PATCH(
           post:posts(id, content, status, published_at)
         )
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     return NextResponse.json({
@@ -291,9 +293,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const adminClient = createAdminClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -306,7 +309,7 @@ export async function DELETE(
     const { data: test } = await supabase
       .from('ab_tests')
       .select('*, variants:ab_test_variants(post_id)')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -330,7 +333,7 @@ export async function DELETE(
     const { error } = await adminClient
       .from('ab_tests')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       console.error('Error deleting A/B test:', error)

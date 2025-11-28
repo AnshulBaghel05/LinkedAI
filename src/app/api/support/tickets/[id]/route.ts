@@ -5,9 +5,10 @@ import { UpdateTicketData } from '@/types/support'
 // GET /api/support/tickets/[id] - Get specific ticket
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -18,7 +19,7 @@ export async function GET(
     const { data: ticket, error } = await supabase
       .from('support_tickets')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -45,9 +46,10 @@ export async function GET(
 // PATCH /api/support/tickets/[id] - Update ticket status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -62,7 +64,7 @@ export async function PATCH(
     const { data: existingTicket } = await supabase
       .from('support_tickets')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -93,7 +95,7 @@ export async function PATCH(
     const { data: ticket, error } = await supabase
       .from('support_tickets')
       .update(updateData)
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .select()
       .single()
@@ -107,9 +109,9 @@ export async function PATCH(
     }
 
     // Log notification
-    console.log(`[SUPPORT] Ticket ${params.id} updated by user ${user.id}`)
+    console.log(`[SUPPORT] Ticket ${id} updated by user ${user.id}`)
     if (status) {
-      console.log(`[EMAIL] Would send status update notification for ticket ${params.id}`)
+      console.log(`[EMAIL] Would send status update notification for ticket ${id}`)
     }
 
     return NextResponse.json({
@@ -128,9 +130,10 @@ export async function PATCH(
 // DELETE /api/support/tickets/[id] - Delete ticket (optional)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -141,7 +144,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('support_tickets')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
 
     if (error) {

@@ -14,9 +14,10 @@ import {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { accountId: string } }
+  { params }: { params: Promise<{ accountId: string }> }
 ) {
   try {
+    const { accountId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -26,7 +27,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const account = await getLinkedInAccountById(params.accountId)
+    const account = await getLinkedInAccountById(accountId)
 
     if (!account) {
       return NextResponse.json({ error: 'Account not found' }, { status: 404 })
@@ -52,9 +53,10 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { accountId: string } }
+  { params }: { params: Promise<{ accountId: string }> }
 ) {
   try {
+    const { accountId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -69,7 +71,7 @@ export async function PATCH(
 
     // Handle special actions
     if (action === 'set_primary') {
-      const result = await setPrimaryLinkedInAccount(params.accountId, user.id)
+      const result = await setPrimaryLinkedInAccount(accountId, user.id)
       if (!result.success) {
         return NextResponse.json({ error: result.error }, { status: 400 })
       }
@@ -77,7 +79,7 @@ export async function PATCH(
     }
 
     if (action === 'deactivate') {
-      const result = await deactivateLinkedInAccount(params.accountId, user.id)
+      const result = await deactivateLinkedInAccount(accountId, user.id)
       if (!result.success) {
         return NextResponse.json({ error: result.error }, { status: 400 })
       }
@@ -85,7 +87,7 @@ export async function PATCH(
     }
 
     // Regular update
-    const result = await updateLinkedInAccount(params.accountId, updates)
+    const result = await updateLinkedInAccount(accountId, updates)
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 })
@@ -110,9 +112,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { accountId: string } }
+  { params }: { params: Promise<{ accountId: string }> }
 ) {
   try {
+    const { accountId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -122,7 +125,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const result = await deleteLinkedInAccount(params.accountId, user.id)
+    const result = await deleteLinkedInAccount(accountId, user.id)
 
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 })

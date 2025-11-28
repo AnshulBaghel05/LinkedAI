@@ -8,9 +8,10 @@ import { updateMemberRole, removeMember, checkWorkspacePermission } from '@/lib/
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { workspaceId: string; memberId: string } }
+  { params }: { params: Promise<{ workspaceId: string; memberId: string }> }
 ) {
   try {
+    const { workspaceId, memberId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -19,8 +20,6 @@ export async function PATCH(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const { workspaceId, memberId } = params
 
     // Check if user is admin or owner
     const hasAccess = await checkWorkspacePermission({
@@ -100,9 +99,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { workspaceId: string; memberId: string } }
+  { params }: { params: Promise<{ workspaceId: string; memberId: string }> }
 ) {
   try {
+    const { workspaceId, memberId } = await params
     const supabase = await createClient()
     const {
       data: { user },
@@ -111,8 +111,6 @@ export async function DELETE(
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
-    const { workspaceId, memberId } = params
 
     // Get member details
     const adminClient = createAdminClient()

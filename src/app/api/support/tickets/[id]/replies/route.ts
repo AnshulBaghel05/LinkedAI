@@ -5,9 +5,10 @@ import { CreateReplyData } from '@/types/support'
 // GET /api/support/tickets/[id]/replies - Get all replies for a ticket
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -19,7 +20,7 @@ export async function GET(
     const { data: ticket } = await supabase
       .from('support_tickets')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -41,7 +42,7 @@ export async function GET(
           avatar_url
         )
       `)
-      .eq('ticket_id', params.id)
+      .eq('ticket_id', id)
       .order('created_at', { ascending: true })
 
     if (error) {
@@ -68,9 +69,10 @@ export async function GET(
 // POST /api/support/tickets/[id]/replies - Add reply to ticket
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -92,7 +94,7 @@ export async function POST(
     const { data: ticket } = await supabase
       .from('support_tickets')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', user.id)
       .single()
 
@@ -107,7 +109,7 @@ export async function POST(
     const { data: reply, error } = await supabase
       .from('support_replies')
       .insert({
-        ticket_id: params.id,
+        ticket_id: id,
         user_id: user.id,
         message: message.trim(),
         is_staff: false,
@@ -138,7 +140,7 @@ export async function POST(
           status: 'in_progress',
           updated_at: new Date().toISOString(),
         })
-        .eq('id', params.id)
+        .eq('id', id)
     }
 
     // Update ticket's updated_at timestamp
@@ -147,10 +149,10 @@ export async function POST(
       .update({
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
 
     // Log notification
-    console.log(`[SUPPORT] New reply added to ticket ${params.id} by user ${user.id}`)
+    console.log(`[SUPPORT] New reply added to ticket ${id} by user ${user.id}`)
     console.log(`[EMAIL] Would send reply notification to support team`)
 
     return NextResponse.json({
