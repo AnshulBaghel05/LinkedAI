@@ -34,7 +34,23 @@ This endpoint:
 - Publishes to LinkedIn
 - Updates database
 
-### 3. Configure Vercel Cron (Production)
+### 3. Configure Cron Service (Production)
+
+**⚠️ IMPORTANT**: Vercel Hobby (free) plan only allows daily cron jobs.
+
+**Recommended**: Use external cron service (free, works perfectly)
+
+👉 **See complete setup**: [docs/11-EXTERNAL-CRON-SETUP.md](./11-EXTERNAL-CRON-SETUP.md)
+
+**Quick Setup** (5 minutes):
+1. Sign up at [cron-job.org](https://cron-job.org) (free)
+2. Create cron job:
+   - URL: `https://your-app.vercel.app/api/cron/publish-scheduled`
+   - Schedule: Every 15 minutes
+   - Header: `Authorization: Bearer YOUR_CRON_SECRET`
+3. Done!
+
+**Alternative for Vercel Pro users** ($20/month):
 
 Create `vercel.json` in project root:
 

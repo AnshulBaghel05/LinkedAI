@@ -46,6 +46,7 @@ npm run dev
 | [08 - API Reference](./docs/08-API-REFERENCE.md) | API documentation (Enterprise) |
 | [09 - Email Notifications](./docs/09-EMAIL-NOTIFICATIONS.md) | Setup Resend for emails |
 | [10 - Troubleshooting](./docs/10-TROUBLESHOOTING.md) | Common issues and solutions |
+| [11 - External Cron Setup](./docs/11-EXTERNAL-CRON-SETUP.md) | Free cron service for auto-posting ⭐ |
 
 ---
 
@@ -243,8 +244,12 @@ CRON_SECRET=
 
 1. Update `NEXTAUTH_URL` with Vercel URL
 2. Update LinkedIn OAuth redirect URL
-3. Configure cron jobs
+3. **Configure cron jobs** (Important!)
+   - **Vercel Hobby (Free)**: Use external cron service → [Setup Guide](./docs/11-EXTERNAL-CRON-SETUP.md) ⭐
+   - **Vercel Pro ($20/mo)**: Built-in cron jobs work
 4. Test end-to-end
+
+**⚠️ Note**: Vercel free tier only allows daily cron jobs. For auto-posting every 15 minutes, use free external cron service (Cron-job.org) - takes 5 minutes to set up!
 
 ---
 

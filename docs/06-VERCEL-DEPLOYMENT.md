@@ -107,31 +107,29 @@ https://your-app.vercel.app/api/auth/callback/linkedin
 
 ### 3. Configure Cron Jobs
 
-#### Create vercel.json
+**⚠️ IMPORTANT: Vercel Hobby Plan Limitation**
 
+Vercel's **free Hobby plan** only allows **daily cron jobs**. Frequent cron jobs (every 15 minutes) require Vercel Pro ($20/month).
+
+**Recommended for Free Tier**: Use external cron service (Cron-job.org)
+
+See complete setup guide: [docs/11-EXTERNAL-CRON-SETUP.md](./11-EXTERNAL-CRON-SETUP.md)
+
+**Quick Setup (5 minutes)**:
+1. Sign up at [cron-job.org](https://cron-job.org) (free)
+2. Create cron job pointing to: `https://your-app.vercel.app/api/cron/publish-scheduled`
+3. Schedule: Every 15 minutes (`*/15 * * * *`)
+4. Add header: `Authorization: Bearer YOUR_CRON_SECRET`
+5. Done! Works perfectly on free tier
+
+**vercel.json** (already configured):
 ```json
 {
-  "crons": [
-    {
-      "path": "/api/cron/auto-post",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/analytics-sync",
-      "schedule": "0 */6 * * *"
-    }
-  ]
+  "crons": []
 }
 ```
 
-Push to GitHub:
-```bash
-git add vercel.json
-git commit -m "Add cron job configuration"
-git push
-```
-
-Vercel will auto-deploy and set up cron jobs.
+The `vercel.json` file intentionally has empty crons array to avoid deployment errors on Hobby plan.
 
 ---
 
