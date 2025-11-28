@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import ABTestWizard from '@/components/ab-testing/ab-test-wizard'
 import { getABTestingLimits } from '@/lib/ab-testing/plan-limits'
 
+// This page can't be statically generated due to dynamic routing
+export const dynamic = 'force-dynamic'
+
 export default function NewABTestPage() {
   const router = useRouter()
   const [creating, setCreating] = useState(false)

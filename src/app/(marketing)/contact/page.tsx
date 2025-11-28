@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Mail, MapPin, Phone, Send, MessageSquare, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+export const dynamic = 'force-dynamic'
+
 export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',

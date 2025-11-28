@@ -6,6 +6,8 @@ import { Footer } from '@/components/landing/footer'
 import { Button } from '@/components/ui/button'
 import { Play, Pause, Volume2, VolumeX, Maximize } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 export default function DemoPage() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)

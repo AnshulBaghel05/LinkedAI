@@ -11,6 +11,9 @@ import NotificationBell from '@/components/notifications/notification-bell'
 import { useUserPlan } from '@/hooks/useUserPlan'
 import { canAccessRoute } from '@/lib/plans/features'
 
+// Dashboard requires authentication, disable static generation
+export const dynamic = 'force-dynamic'
+
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', requiresPlan: false },
   { href: '/generate', icon: Wand2, label: 'Generate', requiresPlan: false },
