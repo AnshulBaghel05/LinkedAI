@@ -395,8 +395,8 @@ export async function refreshLinkedInToken(
       body: new URLSearchParams({
         grant_type: 'refresh_token',
         refresh_token: account.linkedin_refresh_token,
-        client_id: process.env.LINKEDIN_CLIENT_ID!,
-        client_secret: process.env.LINKEDIN_CLIENT_SECRET!,
+        client_id: process.env.LINKEDIN_CLIENT_ID || '',
+        client_secret: process.env.LINKEDIN_CLIENT_SECRET || '',
       }),
     })
 

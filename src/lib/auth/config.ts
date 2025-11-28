@@ -3,19 +3,25 @@ import { SupabaseAdapter } from '@auth/supabase-adapter'
 import LinkedInProvider from 'next-auth/providers/linkedin'
 import GoogleProvider from 'next-auth/providers/google'
 
+// Get environment variables with defaults for build time
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const linkedinClientId = process.env.LINKEDIN_CLIENT_ID || ''
+const linkedinClientSecret = process.env.LINKEDIN_CLIENT_SECRET || ''
+
 export const authOptions: NextAuthOptions = {
   // Use Supabase adapter for session and user management
   adapter: SupabaseAdapter({
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    url: supabaseUrl,
+    secret: supabaseServiceKey,
   }),
 
   // Authentication providers
   providers: [
     // LinkedIn OAuth
     LinkedInProvider({
-      clientId: process.env.LINKEDIN_CLIENT_ID!,
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
+      clientId: linkedinClientId,
+      clientSecret: linkedinClientSecret,
       authorization: {
         params: {
           scope: 'openid profile email w_member_social',

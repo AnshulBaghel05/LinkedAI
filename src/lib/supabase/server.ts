@@ -3,11 +3,11 @@ import { cookies } from 'next/headers'
 
 export async function createClient() {
   const cookieStore = await cookies()
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables')
+    throw new Error('supabaseUrl and supabaseKey are required. Please check your environment variables.')
   }
 
   return createServerClient(supabaseUrl, supabaseKey, {
@@ -30,11 +30,11 @@ export async function createClient() {
 
 // Admin client for server-side operations that need elevated privileges
 export function createAdminClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error('Missing Supabase admin environment variables')
+    throw new Error('supabaseUrl and serviceRoleKey are required for admin client. Please check your environment variables.')
   }
 
   // Note: This bypasses RLS - use only for server-side admin operations

@@ -114,7 +114,11 @@ export function verifyRazorpaySignature(
   signature: string
 ): boolean {
   const crypto = require('crypto')
-  const keySecret = process.env.RAZORPAY_KEY_SECRET!
+  const keySecret = process.env.RAZORPAY_KEY_SECRET || ''
+
+  if (!keySecret) {
+    throw new Error('Razorpay key secret is not configured')
+  }
 
   const generatedSignature = crypto
     .createHmac('sha256', keySecret)
@@ -130,7 +134,7 @@ export function verifyWebhookSignature(
   signature: string
 ): boolean {
   const crypto = require('crypto')
-  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET!
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || ''
 
   if (!webhookSecret) {
     throw new Error('Razorpay webhook secret is not configured')
