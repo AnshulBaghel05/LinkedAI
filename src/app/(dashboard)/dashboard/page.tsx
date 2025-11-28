@@ -12,12 +12,21 @@ import {
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [greeting, setGreeting] = useState('Hello')
+  const [stats, setStats] = useState([
+    { label: 'Posts Generated', value: '0', icon: Wand2, color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-50', change: '+0 this week' },
+    { label: 'Drafts', value: '0', icon: FileText, color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-50', change: '0 pending' },
+    { label: 'Scheduled', value: '0', icon: Clock, color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-50', change: 'Next: --' },
+    { label: 'Published', value: '0', icon: TrendingUp, color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-50', change: '+0% reach' },
+  ])
   const supabase = createClient()
 
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
+      if (user) {
+        await fetchStats(user.id)
+      }
     }
     getUser()
 
@@ -28,12 +37,44 @@ export default function DashboardPage() {
     else setGreeting('Good evening')
   }, [supabase.auth])
 
-  const stats = [
-    { label: 'Posts Generated', value: '0', icon: Wand2, color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-50', change: '+0 this week' },
-    { label: 'Drafts', value: '0', icon: FileText, color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-50', change: '0 pending' },
-    { label: 'Scheduled', value: '0', icon: Clock, color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-50', change: 'Next: --' },
-    { label: 'Published', value: '0', icon: TrendingUp, color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-50', change: '+0% reach' },
-  ]
+  const fetchStats = async (userId: string) => {
+    try {
+      // Fetch all posts for the user
+      const { data: allPosts } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('user_id', userId)
+
+      // Count posts by status
+      const totalGenerated = allPosts?.length || 0
+      const draftsCount = allPosts?.filter(p => p.status === 'draft').length || 0
+      const scheduledCount = allPosts?.filter(p => p.status === 'scheduled').length || 0
+      const publishedCount = allPosts?.filter(p => p.status === 'published').length || 0
+
+      // Count posts this week
+      const weekAgo = new Date()
+      weekAgo.setDate(weekAgo.getDate() - 7)
+      const thisWeekCount = allPosts?.filter(p => new Date(p.created_at) > weekAgo).length || 0
+
+      // Get next scheduled post
+      const nextScheduled = allPosts
+        ?.filter(p => p.status === 'scheduled' && p.scheduled_for)
+        .sort((a, b) => new Date(a.scheduled_for).getTime() - new Date(b.scheduled_for).getTime())[0]
+
+      const nextScheduledText = nextScheduled
+        ? new Date(nextScheduled.scheduled_for).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : '--'
+
+      setStats([
+        { label: 'Posts Generated', value: totalGenerated.toString(), icon: Wand2, color: 'from-blue-500 to-blue-600', bgColor: 'bg-blue-50', change: `+${thisWeekCount} this week` },
+        { label: 'Drafts', value: draftsCount.toString(), icon: FileText, color: 'from-violet-500 to-purple-600', bgColor: 'bg-violet-50', change: `${draftsCount} pending` },
+        { label: 'Scheduled', value: scheduledCount.toString(), icon: Clock, color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-50', change: `Next: ${nextScheduledText}` },
+        { label: 'Published', value: publishedCount.toString(), icon: TrendingUp, color: 'from-orange-500 to-amber-600', bgColor: 'bg-orange-50', change: `${publishedCount} total` },
+      ])
+    } catch (error) {
+      console.error('Error fetching stats:', error)
+    }
+  }
 
   const quickActions = [
     { href: '/generate', icon: Wand2, label: 'Generate Posts', desc: 'Create AI content', primary: true },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { verifyRazorpaySignature, PLAN_CONFIGS } from '@/lib/razorpay/server'
+import { updateAccountLimit, getLinkedInAccountLimit } from '@/lib/linkedin/accounts'
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,9 +50,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Update profile with new subscription plan
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        subscription_plan: plan,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id)
+
+    if (profileError) {
+      console.error('Error updating profile:', profileError)
+    }
+
+    // Update LinkedIn account limit based on new plan
+    const limitUpdateResult = await updateAccountLimit(user.id, plan)
+
+    if (!limitUpdateResult.success) {
+      console.error('Error updating account limit:', limitUpdateResult.error)
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Payment verified and subscription updated',
+      plan: plan,
+      linkedin_accounts_limit: getLinkedInAccountLimit(plan),
     })
   } catch (error) {
     console.error('Error verifying payment:', error)

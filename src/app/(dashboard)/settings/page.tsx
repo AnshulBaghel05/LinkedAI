@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { User, Linkedin, CreditCard, Save, Loader2, Settings as SettingsIcon, Bell, Shield, Palette, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
+import LinkedInAccountsManager from '@/components/settings/linkedin-accounts-manager'
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null)
@@ -82,32 +83,6 @@ export default function SettingsPage() {
       toast.success('Settings saved!')
     }
     setLoading(false)
-  }
-
-  const handleLinkedInConnect = () => {
-    // Redirect to LinkedIn OAuth initiation route
-    window.location.href = '/api/auth/linkedin'
-  }
-
-  const handleLinkedInDisconnect = async () => {
-    if (!user) return
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        linkedin_connected: false,
-        linkedin_access_token: null,
-        linkedin_user_id: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id)
-
-    if (error) {
-      toast.error('Failed to disconnect LinkedIn')
-    } else {
-      toast.success('LinkedIn disconnected successfully')
-      setProfile({ ...profile, linkedin_connected: false })
-    }
   }
 
   const handleLogout = async () => {
@@ -188,48 +163,96 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* LinkedIn Connection */}
+            {/* LinkedIn Accounts Manager */}
+            <LinkedInAccountsManager
+              userPlan={profile?.subscription_plan || 'free'}
+              onUpgrade={() => router.push('/pricing')}
+            />
+
+            {/* Google Calendar Integration */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0a66c2] to-blue-600 flex items-center justify-center shadow-sm">
-                    <Linkedin className="w-5 h-5 text-white" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-sm">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V9h14v10zM5 7V5h14v2H5zm2 4h10v2H7v-2z"/>
+                    </svg>
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900">LinkedIn Connection</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Google Calendar Sync</h2>
                 </div>
               </div>
 
-              <div className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <p className="text-gray-700 font-medium">Connect your LinkedIn account to publish posts directly</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-sm text-gray-500">Status:</span>
-                      {profile?.linkedin_connected ? (
-                        <span className="px-3 py-1 bg-green-50 text-green-600 text-xs font-medium rounded-full border border-green-200">
-                          Connected
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-medium rounded-full border border-orange-200">
-                          Not connected
-                        </span>
-                      )}
-                    </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <p className="text-gray-700 font-medium mb-3">
+                    Automatically sync your scheduled LinkedIn posts to Google Calendar
+                  </p>
+
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
+                    <h4 className="text-sm font-semibold text-blue-900 mb-2">How it works:</h4>
+                    <ul className="text-sm text-blue-800 space-y-1.5">
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-0.5">•</span>
+                        <span>When you schedule a LinkedIn post, a calendar event is created automatically</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-0.5">•</span>
+                        <span>Events include post content preview and scheduled time</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-0.5">•</span>
+                        <span>Get reminders 15 minutes before your post goes live</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-blue-600 mt-0.5">•</span>
+                        <span>Events update automatically if you reschedule</span>
+                      </li>
+                    </ul>
                   </div>
-                  {profile?.linkedin_connected ? (
-                    <button
-                      onClick={handleLinkedInDisconnect}
-                      className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl font-medium transition-colors shadow-sm whitespace-nowrap"
-                    >
-                      Disconnect LinkedIn
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleLinkedInConnect}
-                      className="px-6 py-3 bg-[#0a66c2] hover:bg-[#004182] text-white rounded-xl font-medium transition-colors shadow-lg shadow-blue-500/20 whitespace-nowrap"
-                    >
-                      Connect LinkedIn
-                    </button>
+
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Calendar Sync</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {profile?.google_calendar_enabled ? 'Events syncing to primary calendar' : 'Enable to create calendar events'}
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={profile?.google_calendar_enabled || false}
+                        onChange={async (e) => {
+                          const enabled = e.target.checked
+                          const { error } = await supabase
+                            .from('profiles')
+                            .update({
+                              google_calendar_enabled: enabled,
+                              updated_at: new Date().toISOString()
+                            })
+                            .eq('id', user?.id)
+
+                          if (error) {
+                            toast.error('Failed to update calendar sync')
+                          } else {
+                            toast.success(enabled ? 'Calendar sync enabled' : 'Calendar sync disabled')
+                            setProfile({ ...profile, google_calendar_enabled: enabled })
+                          }
+                        }}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+
+                  {profile?.google_calendar_enabled && (
+                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-xs text-green-800 flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+                        </svg>
+                        Google Calendar sync is active. Your scheduled posts will appear in your calendar.
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>

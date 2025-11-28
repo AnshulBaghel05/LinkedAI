@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Wand2, Loader2, Sparkles, Plus, X, Lightbulb, Zap, Copy, Check, Save, Edit3, Hash, MessageSquare, Target } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { createClient } from '@/lib/supabase/client'
+import { trackPostGenerated, trackPostSavedAsDraft, trackPostEdited } from '@/lib/analytics/posthog'
 
 const toneOptions = [
   { value: 'professional', label: 'Professional', icon: '💼', desc: 'Clear and business-focused' },
@@ -34,6 +36,29 @@ export default function GeneratePage() {
   const [loading, setLoading] = useState(false)
   const [generatedPosts, setGeneratedPosts] = useState<GeneratedPost[]>([])
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [editedContent, setEditedContent] = useState('')
+  const [postsRemaining, setPostsRemaining] = useState<number>(5)
+
+  useEffect(() => {
+    fetchPostsRemaining()
+  }, [])
+
+  const fetchPostsRemaining = async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('posts_remaining')
+        .eq('id', user.id)
+        .single()
+
+      if (profile) {
+        setPostsRemaining(profile.posts_remaining || 5)
+      }
+    }
+  }
 
   const addTopic = (topic?: string) => {
     const topicToAdd = topic || newTopic.trim()
@@ -52,6 +77,69 @@ export default function GeneratePage() {
     setCopiedIndex(index)
     toast.success('Copied to clipboard!')
     setTimeout(() => setCopiedIndex(null), 2000)
+  }
+
+  const handleSaveDraft = async (post: GeneratedPost, index: number) => {
+    try {
+      const res = await fetch('/api/posts/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: post.full_post,
+          topic: post.topic,
+          status: 'draft',
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save draft')
+      }
+
+      // Track event in PostHog
+      trackPostSavedAsDraft({
+        postId: data.post?.id,
+        topic: post.topic,
+        contentLength: post.full_post.length,
+      })
+
+      toast.success('Post saved to drafts!')
+
+      // Remove the saved post from the generated posts list
+      setGeneratedPosts(prev => prev.filter((_, i) => i !== index))
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save draft')
+    }
+  }
+
+  const handleEdit = (post: GeneratedPost, index: number) => {
+    setEditingIndex(index)
+    setEditedContent(post.full_post)
+  }
+
+  const handleSaveEdit = (index: number) => {
+    if (editedContent.trim() !== '') {
+      setGeneratedPosts(prev =>
+        prev.map((p, i) =>
+          i === index
+            ? { ...p, full_post: editedContent }
+            : p
+        )
+      )
+
+      // Track edit event in PostHog
+      trackPostEdited(`generated-${index}`)
+
+      toast.success('Post updated!')
+    }
+    setEditingIndex(null)
+    setEditedContent('')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null)
+    setEditedContent('')
   }
 
   const handleGenerate = async () => {
@@ -76,6 +164,19 @@ export default function GeneratePage() {
 
       setGeneratedPosts(data.posts)
       toast.success(`Generated ${data.posts.length} posts!`)
+
+      // Refresh posts remaining after generation
+      await fetchPostsRemaining()
+
+      // Track generation event in PostHog
+      trackPostGenerated({
+        topics,
+        style: 'professional',
+        tone,
+        length: 3,
+        postsCount: data.posts.length,
+        postsRemaining: postsRemaining - data.posts.length,
+      })
     } catch (error: any) {
       toast.error(error.message)
     } finally {
@@ -98,7 +199,7 @@ export default function GeneratePage() {
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <Zap className="w-4 h-4 text-amber-500" />
-          <span>5 credits remaining</span>
+          <span>{postsRemaining} posts remaining</span>
         </div>
       </div>
 
@@ -317,12 +418,21 @@ export default function GeneratePage() {
 
                   {/* Post Content */}
                   <div className="p-5">
-                    <p className="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed">
-                      {post.full_post}
-                    </p>
+                    {editingIndex === index ? (
+                      <textarea
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        className="w-full min-h-[200px] px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0a66c2]/20 focus:border-[#0a66c2] focus:bg-white transition-colors resize-none"
+                        placeholder="Edit your post..."
+                      />
+                    ) : (
+                      <p className="text-gray-800 whitespace-pre-wrap text-sm leading-relaxed">
+                        {post.full_post}
+                      </p>
+                    )}
 
                     {/* Hashtags */}
-                    {post.suggested_hashtags?.length > 0 && (
+                    {!editingIndex && post.suggested_hashtags?.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
                         <Hash className="w-4 h-4 text-gray-300" />
                         {post.suggested_hashtags.map((tag, i) => (
@@ -336,14 +446,47 @@ export default function GeneratePage() {
 
                   {/* Post Actions */}
                   <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/30 flex items-center gap-2">
-                    <Button size="sm" variant="outline" className="gap-1.5">
-                      <Edit3 className="w-3.5 h-3.5" />
-                      Edit
-                    </Button>
-                    <Button size="sm" className="gap-1.5">
-                      <Save className="w-3.5 h-3.5" />
-                      Save Draft
-                    </Button>
+                    {editingIndex === index ? (
+                      <>
+                        <Button
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => handleSaveEdit(index)}
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          Save Changes
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5"
+                          onClick={handleCancelEdit}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5"
+                          onClick={() => handleEdit(post, index)}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => handleSaveDraft(post, index)}
+                        >
+                          <Save className="w-3.5 h-3.5" />
+                          Save Draft
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

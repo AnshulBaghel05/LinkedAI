@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { addLinkedInAccount } from '@/lib/linkedin/accounts'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -22,6 +23,21 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Verify environment variables
+    const clientId = process.env.LINKEDIN_CLIENT_ID
+    const clientSecret = process.env.LINKEDIN_CLIENT_SECRET
+    const redirectUri = process.env.LINKEDIN_REDIRECT_URI
+
+    console.log('LinkedIn OAuth Debug:', {
+      clientId: clientId?.slice(0, 5) + '...',
+      hasSecret: !!clientSecret,
+      redirectUri,
+    })
+
+    if (!clientId || !clientSecret || !redirectUri) {
+      throw new Error('LinkedIn OAuth configuration missing')
+    }
+
     // Exchange code for access token
     const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
       method: 'POST',
@@ -31,20 +47,27 @@ export async function GET(request: NextRequest) {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         code,
-        client_id: process.env.LINKEDIN_CLIENT_ID!,
-        client_secret: process.env.LINKEDIN_CLIENT_SECRET!,
-        redirect_uri: process.env.LINKEDIN_REDIRECT_URI!,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
       }),
     })
 
+    const responseText = await tokenResponse.text()
+
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.text()
-      console.error('Token exchange failed:', errorData)
-      throw new Error('Failed to exchange authorization code')
+      console.error('Token exchange failed:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        body: responseText,
+      })
+      throw new Error(`LinkedIn API error: ${responseText}`)
     }
 
-    const tokenData = await tokenResponse.json()
+    const tokenData = JSON.parse(responseText)
     const accessToken = tokenData.access_token
+    const refreshToken = tokenData.refresh_token
+    const expiresIn = tokenData.expires_in
 
     // Get LinkedIn user info
     const userInfoResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
@@ -59,8 +82,10 @@ export async function GET(request: NextRequest) {
 
     const userInfo = await userInfoResponse.json()
     const linkedinUserId = userInfo.sub
+    const profileName = userInfo.name || userInfo.given_name
+    const profilePictureUrl = userInfo.picture
 
-    // Update user profile in Supabase
+    // Get authenticated user
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -68,29 +93,56 @@ export async function GET(request: NextRequest) {
       throw new Error('User not authenticated')
     }
 
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        linkedin_connected: true,
-        linkedin_access_token: accessToken,
-        linkedin_user_id: linkedinUserId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id)
+    // Use admin client to ensure profile exists
+    const adminClient = createAdminClient()
 
-    if (updateError) {
-      console.error('Failed to update profile:', updateError)
-      throw new Error('Failed to save LinkedIn connection')
+    const { data: existingProfile } = await adminClient
+      .from('profiles')
+      .select('id, subscription_plan, linkedin_accounts_limit')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!existingProfile) {
+      // Create profile if it doesn't exist
+      await adminClient.from('profiles').insert({
+        id: user.id,
+        email: user.email,
+        subscription_plan: 'free',
+        posts_remaining: 5,
+        posts_limit: 5,
+        posts_used: 0,
+        linkedin_connected: false, // Will be set to true by addLinkedInAccount
+        google_calendar_enabled: false,
+        linkedin_accounts_limit: 1,
+      })
+    }
+
+    // Add LinkedIn account using the new multi-account system
+    const result = await addLinkedInAccount({
+      userId: user.id,
+      linkedinUserId: linkedinUserId,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      tokenExpiresAt: expiresIn
+        ? new Date(Date.now() + expiresIn * 1000).toISOString()
+        : undefined,
+      profileName: profileName,
+      profilePictureUrl: profilePictureUrl,
+      profileUrl: `https://www.linkedin.com/in/${linkedinUserId}`,
+    })
+
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to add LinkedIn account')
     }
 
     // Redirect to settings with success message
     return NextResponse.redirect(
-      new URL('/settings?success=LinkedIn connected successfully!', request.url)
+      new URL('/settings?success=LinkedIn account connected successfully!', request.url)
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error('LinkedIn OAuth callback error:', error)
     return NextResponse.redirect(
-      new URL(`/settings?error=${encodeURIComponent('Failed to connect LinkedIn. Please try again.')}`, request.url)
+      new URL(`/settings?error=${encodeURIComponent(error.message || 'Failed to connect LinkedIn. Please try again.')}`, request.url)
     )
   }
 }

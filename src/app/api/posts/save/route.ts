@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,8 +20,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Insert post into database
-    const { data: post, error } = await supabase
+    // Use admin client to ensure profile exists (bypasses RLS)
+    const adminClient = createAdminClient()
+
+    const { data: existingProfile } = await adminClient
+      .from('profiles')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (!existingProfile) {
+      // Create profile using admin client (bypasses RLS)
+      const { error: profileError } = await adminClient.from('profiles').insert({
+        id: user.id,
+        email: user.email,
+        subscription_plan: 'free',
+        posts_remaining: 5,
+        posts_limit: 5,
+        posts_used: 0,
+        linkedin_connected: false,
+        google_calendar_enabled: false,
+      })
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError)
+        return NextResponse.json(
+          { error: `Failed to create user profile: ${profileError.message}` },
+          { status: 500 }
+        )
+      }
+    }
+
+    // Insert post into database using admin client (bypasses RLS)
+    const { data: post, error } = await adminClient
       .from('posts')
       .insert({
         user_id: user.id,
@@ -35,7 +66,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Error saving post:', error)
       return NextResponse.json(
-        { error: 'Failed to save post' },
+        { error: `Failed to save post: ${error.message}` },
         { status: 500 }
       )
     }
@@ -44,10 +75,10 @@ export async function POST(request: NextRequest) {
       success: true,
       post,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving post:', error)
     return NextResponse.json(
-      { error: 'Failed to save post' },
+      { error: `Failed to save post: ${error.message || 'Unknown error'}` },
       { status: 500 }
     )
   }

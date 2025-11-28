@@ -44,8 +44,8 @@ Create a ${lengthGuide[length] || 'medium'} LinkedIn post about: ${topic}
 Make it engaging, authentic, and valuable to the reader. Only return the post content, no additional commentary.`
 
   try {
-    // Use Gemini 1.5 Flash for fast, cost-effective generation
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    // Use Gemini 2.5 Flash for fast, cost-effective generation
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     const result = await model.generateContent(systemPrompt)
     const response = result.response

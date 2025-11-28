@@ -1,14 +1,116 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { FileText, Edit, Trash2, Calendar, Search, Wand2, Filter, MoreVertical, Clock, Tag } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { ScheduleModal } from '@/components/scheduling/schedule-modal'
 
 export default function DraftsPage() {
-  const [drafts] = useState<any[]>([])
+  const [drafts, setDrafts] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterBy, setFilterBy] = useState('all')
+  const [isLoading, setIsLoading] = useState(true)
+  const [selectedPost, setSelectedPost] = useState<any>(null)
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
+
+  useEffect(() => {
+    fetchDrafts()
+  }, [])
+
+  const fetchDrafts = async () => {
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'draft')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching drafts:', error)
+        return
+      }
+
+      setDrafts(data || [])
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSchedulePost = async (postId: string, scheduledFor: Date, syncToGoogleCalendar: boolean) => {
+    try {
+      const response = await fetch('/api/posts/schedule', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          postId,
+          scheduledFor: scheduledFor.toISOString(),
+          syncToGoogleCalendar,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        // If LinkedIn not connected, show specific message with link
+        if (data.error?.includes('connect your LinkedIn')) {
+          const goToSettings = confirm(data.error + '\n\nWould you like to go to Settings to connect LinkedIn?')
+          if (goToSettings) {
+            window.location.href = '/settings'
+          }
+          throw new Error('LinkedIn connection required')
+        }
+        throw new Error(data.error || 'Failed to schedule post')
+      }
+
+      // Refresh drafts list
+      await fetchDrafts()
+      setIsScheduleModalOpen(false)
+      setSelectedPost(null)
+    } catch (error: any) {
+      throw error
+    }
+  }
+
+  const handleDeleteDraft = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this draft?')) return
+
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postId)
+
+      if (error) {
+        console.error('Error deleting draft:', error)
+        return
+      }
+
+      await fetchDrafts()
+    } catch (error) {
+      console.error('Error:', error)
+    }
+  }
+
+  const filteredDrafts = drafts.filter((draft) => {
+    if (!searchTerm) return true
+    return (
+      draft.content?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      draft.topic?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-6 lg:p-8">
@@ -32,7 +134,13 @@ export default function DraftsPage() {
           <div className="text-sm text-gray-500">Total Drafts</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-          <div className="text-2xl font-bold text-[#0a66c2]">0</div>
+          <div className="text-2xl font-bold text-[#0a66c2]">
+            {drafts.filter(d => {
+              const weekAgo = new Date()
+              weekAgo.setDate(weekAgo.getDate() - 7)
+              return new Date(d.created_at) > weekAgo
+            }).length}
+          </div>
           <div className="text-sm text-gray-500">This Week</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
@@ -68,14 +176,23 @@ export default function DraftsPage() {
       </div>
 
       {/* Drafts List */}
-      {drafts.length === 0 ? (
+      {isLoading ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent mx-auto"></div>
+          <p className="text-gray-500 mt-4">Loading drafts...</p>
+        </div>
+      ) : filteredDrafts.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
           <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-50 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
             <FileText className="w-10 h-10 text-gray-400" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">No drafts yet</h3>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">
+            {searchTerm ? 'No matching drafts' : 'No drafts yet'}
+          </h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            Start creating amazing LinkedIn content and save your posts as drafts to refine them later
+            {searchTerm
+              ? 'Try a different search term'
+              : 'Start creating amazing LinkedIn content and save your posts as drafts to refine them later'}
           </p>
           <Link href="/generate">
             <Button className="bg-[#0a66c2] hover:bg-[#004182] text-white px-6 py-6 text-base rounded-xl shadow-lg shadow-blue-500/20">
@@ -86,7 +203,7 @@ export default function DraftsPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          {drafts.map((draft, index) => (
+          {filteredDrafts.map((draft, index) => (
             <div
               key={draft.id}
               className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
@@ -104,7 +221,7 @@ export default function DraftsPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <FileText className="w-4 h-4" />
-                      <span>{draft.word_count} words</span>
+                      <span>{draft.content?.split(' ').length || 0} words</span>
                     </div>
                   </div>
                 </div>
@@ -115,24 +232,12 @@ export default function DraftsPage() {
 
               {/* Draft Content */}
               <div className="p-6">
-                <p className="text-gray-800 leading-relaxed whitespace-pre-wrap mb-4">
+                {draft.topic && (
+                  <h3 className="text-lg font-semibold text-blue-600 mb-2">{draft.topic}</h3>
+                )}
+                <p className="text-gray-800 leading-relaxed whitespace-pre-wrap mb-4 line-clamp-6">
                   {draft.content}
                 </p>
-
-                {/* Tags */}
-                {draft.tags && draft.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {draft.tags.map((tag: string, tagIndex: number) => (
-                      <span
-                        key={tagIndex}
-                        className="px-3 py-1 bg-blue-50 text-[#0a66c2] text-sm rounded-full border border-blue-100 flex items-center gap-1"
-                      >
-                        <Tag className="w-3 h-3" />
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
 
                 {/* Actions */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
@@ -141,12 +246,21 @@ export default function DraftsPage() {
                       <Edit className="w-4 h-4" />
                       Edit Draft
                     </button>
-                    <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm">
+                    <button
+                      onClick={() => {
+                        setSelectedPost(draft)
+                        setIsScheduleModalOpen(true)
+                      }}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
+                    >
                       <Calendar className="w-4 h-4" />
                       Schedule
                     </button>
                   </div>
-                  <button className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors">
+                  <button
+                    onClick={() => handleDeleteDraft(draft.id)}
+                    className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                  >
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
@@ -166,6 +280,19 @@ export default function DraftsPage() {
             </button>
           </Link>
         </div>
+      )}
+
+      {/* Schedule Modal */}
+      {selectedPost && (
+        <ScheduleModal
+          isOpen={isScheduleModalOpen}
+          onClose={() => {
+            setIsScheduleModalOpen(false)
+            setSelectedPost(null)
+          }}
+          post={selectedPost}
+          onSchedule={handleSchedulePost}
+        />
       )}
     </div>
   )
