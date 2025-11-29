@@ -42,6 +42,7 @@ export function Navbar() {
               height={40}
               className="h-10 w-auto group-hover:scale-105 transition-transform"
               priority
+              unoptimized
             />
           </Link>
 

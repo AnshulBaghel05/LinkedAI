@@ -94,6 +94,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 height={40}
                 className="h-10 w-auto"
                 priority
+                unoptimized
               />
             </Link>
 

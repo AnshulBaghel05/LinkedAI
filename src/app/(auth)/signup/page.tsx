@@ -82,6 +82,7 @@ export default function SignupPage() {
               width={180}
               height={48}
               className="h-12 w-auto"
+              unoptimized
             />
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
