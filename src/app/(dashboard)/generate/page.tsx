@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Wand2, Loader2, Sparkles, Plus, X, Lightbulb, Zap, Copy, Check, Save, Edit3, Hash, MessageSquare, Target } from 'lucide-react'
+import { Loader2, Sparkles, X, Lightbulb, Copy, Check, Save, Edit3, Hash, MessageSquare, Target, FileText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
 import { trackPostGenerated, trackPostSavedAsDraft, trackPostEdited } from '@/lib/analytics/posthog'
+import { PostTemplate } from '@/lib/templates'
+import { useSearchParams } from 'next/navigation'
 
 const toneOptions = [
   { value: 'professional', label: 'Professional', icon: '💼', desc: 'Clear and business-focused' },
@@ -13,10 +15,6 @@ const toneOptions = [
   { value: 'thought-leader', label: 'Thought Leader', icon: '🎯', desc: 'Authoritative insights' },
   { value: 'storytelling', label: 'Storytelling', icon: '📖', desc: 'Engaging narratives' },
   { value: 'educational', label: 'Educational', icon: '📚', desc: 'Teach and inform' },
-]
-
-const topicSuggestions = [
-  'Leadership', 'AI & Tech', 'Career Growth', 'Productivity', 'Startups', 'Marketing'
 ]
 
 interface GeneratedPost {
@@ -29,8 +27,15 @@ interface GeneratedPost {
 }
 
 export default function GeneratePage() {
-  const [topics, setTopics] = useState<string[]>([])
-  const [newTopic, setNewTopic] = useState('')
+  const searchParams = useSearchParams()
+
+  // New state variables for redesigned layout
+  const [topicDescription, setTopicDescription] = useState('')
+  const [mainTopic, setMainTopic] = useState('')
+  const [niche, setNiche] = useState('')
+  const [targetAudience, setTargetAudience] = useState('')
+
+  // Existing state variables
   const [tone, setTone] = useState('professional')
   const [postsCount, setPostsCount] = useState(7)
   const [loading, setLoading] = useState(false)
@@ -39,10 +44,35 @@ export default function GeneratePage() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [editedContent, setEditedContent] = useState('')
   const [postsRemaining, setPostsRemaining] = useState<number>(5)
+  const [selectedTemplate, setSelectedTemplate] = useState<PostTemplate | null>(null)
 
   useEffect(() => {
     fetchPostsRemaining()
-  }, [])
+
+    // Check if user came from templates page
+    const templateParam = searchParams?.get('template')
+    if (templateParam === 'true') {
+      const storedTemplate = localStorage.getItem('selectedTemplate')
+      if (storedTemplate) {
+        try {
+          const template: PostTemplate = JSON.parse(storedTemplate)
+          setSelectedTemplate(template)
+
+          // Pre-fill with template data
+          if (template.tone) {
+            setTone(template.tone)
+          }
+
+          // Clear the stored template
+          localStorage.removeItem('selectedTemplate')
+
+          toast.success(`Template "${template.name}" loaded!`)
+        } catch (error) {
+          console.error('Error parsing template:', error)
+        }
+      }
+    }
+  }, [searchParams])
 
   const fetchPostsRemaining = async () => {
     const supabase = createClient()
@@ -60,16 +90,23 @@ export default function GeneratePage() {
     }
   }
 
-  const addTopic = (topic?: string) => {
-    const topicToAdd = topic || newTopic.trim()
-    if (topicToAdd && !topics.includes(topicToAdd)) {
-      setTopics([...topics, topicToAdd])
-      setNewTopic('')
-    }
-  }
+  // Helper function to construct topics array from new input fields
+  const constructTopicsArray = () => {
+    const parts = []
 
-  const removeTopic = (topic: string) => {
-    setTopics(topics.filter((t) => t !== topic))
+    if (topicDescription.trim()) {
+      parts.push(topicDescription.trim())
+    }
+
+    if (mainTopic.trim() || niche.trim() || targetAudience.trim()) {
+      const metadata = []
+      if (mainTopic.trim()) metadata.push(`Main Topic: ${mainTopic}`)
+      if (niche.trim()) metadata.push(`Niche: ${niche}`)
+      if (targetAudience.trim()) metadata.push(`Target Audience: ${targetAudience}`)
+      parts.push(metadata.join(', '))
+    }
+
+    return parts
   }
 
   const copyToClipboard = (text: string, index: number) => {
@@ -143,17 +180,28 @@ export default function GeneratePage() {
   }
 
   const handleGenerate = async () => {
-    if (topics.length === 0) {
-      toast.error('Please add at least one topic')
+    if (!topicDescription.trim() && !selectedTemplate) {
+      toast.error('Please describe what you want to write about')
       return
     }
 
     setLoading(true)
     try {
+      const topics = constructTopicsArray()
+
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topics, tone, postsCount }),
+        body: JSON.stringify({
+          topics,
+          tone,
+          postsCount,
+          template: selectedTemplate ? {
+            name: selectedTemplate.name,
+            template: selectedTemplate.template,
+            variables: selectedTemplate.variables,
+          } : undefined
+        }),
       })
 
       const data = await res.json()
@@ -184,6 +232,11 @@ export default function GeneratePage() {
     }
   }
 
+  const handleClearTemplate = () => {
+    setSelectedTemplate(null)
+    toast.success('Template cleared')
+  }
+
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
@@ -191,172 +244,222 @@ export default function GeneratePage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0a66c2] to-[#004182] flex items-center justify-center">
-              <Wand2 className="w-5 h-5 text-white" />
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">AI Content Generator</h1>
           </div>
           <p className="text-gray-500">Create engaging LinkedIn posts powered by AI in seconds</p>
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Zap className="w-4 h-4 text-amber-500" />
+          <Sparkles className="w-4 h-4 text-amber-500" />
           <span>{postsRemaining} posts remaining</span>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-5 gap-8">
-        {/* Left Panel - Input Section */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Topics Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-[#0a66c2]" />
-                <h2 className="font-semibold text-gray-900">Topics & Expertise</h2>
+      {/* Template Indicator */}
+      {selectedTemplate && (
+        <div className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-5 h-5 text-white" />
               </div>
-              <p className="text-sm text-gray-500 mt-1">What do you want to write about?</p>
-            </div>
-
-            <div className="p-5">
-              {/* Topic Input */}
-              <div className="flex gap-2 mb-4">
-                <input
-                  type="text"
-                  value={newTopic}
-                  onChange={(e) => setNewTopic(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && addTopic()}
-                  placeholder="Enter a topic..."
-                  className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0a66c2]/20 focus:border-[#0a66c2] focus:bg-white transition-colors"
-                />
-                <button
-                  onClick={() => addTopic()}
-                  className="px-4 py-2.5 bg-[#0a66c2] text-white rounded-xl hover:bg-[#004182] transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Topic Suggestions */}
-              <div className="mb-4">
-                <p className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                  <Lightbulb className="w-3 h-3" /> Quick add:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {topicSuggestions.filter(s => !topics.includes(s)).slice(0, 4).map((suggestion) => (
-                    <button
-                      key={suggestion}
-                      onClick={() => addTopic(suggestion)}
-                      className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-[#0a66c2]/10 hover:text-[#0a66c2] transition-colors"
-                    >
-                      + {suggestion}
-                    </button>
-                  ))}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-gray-900">{selectedTemplate.name}</h3>
+                  <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                    Template
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">{selectedTemplate.description}</p>
+                <div className="bg-white/50 rounded-lg p-3 text-xs text-gray-700 max-h-20 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap font-sans">
+                    {selectedTemplate.template.slice(0, 150)}
+                    {selectedTemplate.template.length > 150 && '...'}
+                  </pre>
                 </div>
               </div>
-
-              {/* Selected Topics */}
-              {topics.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {topics.map((topic) => (
-                    <span
-                      key={topic}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0a66c2]/10 text-[#0a66c2] rounded-full text-sm font-medium group"
-                    >
-                      {topic}
-                      <button
-                        onClick={() => removeTopic(topic)}
-                        className="w-4 h-4 rounded-full hover:bg-[#0a66c2]/20 flex items-center justify-center transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {topics.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-4">Add topics to get started</p>
-              )}
             </div>
-          </div>
-
-          {/* Tone Selection Card */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-[#0a66c2]" />
-                <h2 className="font-semibold text-gray-900">Writing Style</h2>
-              </div>
-            </div>
-
-            <div className="p-5">
-              <div className="grid grid-cols-1 gap-2">
-                {toneOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setTone(option.value)}
-                    className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                      tone === option.value
-                        ? 'border-[#0a66c2] bg-[#0a66c2]/5'
-                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className="text-xl">{option.icon}</span>
-                    <div className="flex-1">
-                      <p className={`text-sm font-medium ${tone === option.value ? 'text-[#0a66c2]' : 'text-gray-700'}`}>
-                        {option.label}
-                      </p>
-                      <p className="text-xs text-gray-400">{option.desc}</p>
-                    </div>
-                    {tone === option.value && (
-                      <Check className="w-5 h-5 text-[#0a66c2]" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Posts Count & Generate */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-sm font-medium text-gray-700">Number of Posts</label>
-              <span className="text-2xl font-bold text-[#0a66c2]">{postsCount}</span>
-            </div>
-            <input
-              type="range"
-              min={1}
-              max={14}
-              value={postsCount}
-              onChange={(e) => setPostsCount(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#0a66c2] mb-6"
-            />
-            <div className="flex justify-between text-xs text-gray-400 mb-6">
-              <span>1 post</span>
-              <span>14 posts</span>
-            </div>
-
             <Button
-              onClick={handleGenerate}
-              disabled={loading || topics.length === 0}
-              className="w-full h-12 text-base gap-2"
+              onClick={handleClearTemplate}
+              variant="outline"
+              size="sm"
+              className="flex-shrink-0"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Generating magic...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  Generate {postsCount} Posts
-                </>
-              )}
+              <X className="w-4 h-4" />
             </Button>
           </div>
         </div>
+      )}
 
-        {/* Right Panel - Generated Posts */}
-        <div className="lg:col-span-3">
+      {/* Input Section - Full Width Cards */}
+      <div className="space-y-6 mb-8">
+        {/* Topic Description Card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-[#0a66c2]" />
+              <h2 className="font-semibold text-gray-900">What do you want to write about?</h2>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              Describe your topic in detail. Be specific about what you want to communicate.
+            </p>
+          </div>
+
+          <div className="p-5">
+            <textarea
+              value={topicDescription}
+              onChange={(e) => setTopicDescription(e.target.value)}
+              placeholder="Example: Write a post about AI in healthcare, focusing on how machine learning helps doctors make better diagnoses. Emphasize patient outcomes and the future of medical technology..."
+              rows={6}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0a66c2]/20 focus:border-[#0a66c2] focus:bg-white transition-colors resize-none"
+            />
+            <div className="flex justify-between mt-2 text-xs text-gray-500">
+              <span>{topicDescription.length} characters</span>
+              <span>Be as detailed as you like</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Niche Specification Card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+            <div className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-[#0a66c2]" />
+              <h2 className="font-semibold text-gray-900">Specify Your Focus</h2>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              Help us understand your content niche better (optional)
+            </p>
+          </div>
+
+          <div className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Main Topic */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Hash className="inline w-4 h-4 mr-1" />
+                  Main Topic
+                </label>
+                <input
+                  type="text"
+                  value={mainTopic}
+                  onChange={(e) => setMainTopic(e.target.value)}
+                  placeholder="e.g., Artificial Intelligence"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0a66c2]/20 focus:border-[#0a66c2] focus:bg-white transition-colors"
+                />
+              </div>
+
+              {/* Niche/Sub-topic */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Lightbulb className="inline w-4 h-4 mr-1" />
+                  Niche/Sub-topic
+                </label>
+                <input
+                  type="text"
+                  value={niche}
+                  onChange={(e) => setNiche(e.target.value)}
+                  placeholder="e.g., Healthcare Applications"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0a66c2]/20 focus:border-[#0a66c2] focus:bg-white transition-colors"
+                />
+              </div>
+
+              {/* Target Audience */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Target className="inline w-4 h-4 mr-1" />
+                  Target Audience
+                </label>
+                <input
+                  type="text"
+                  value={targetAudience}
+                  onChange={(e) => setTargetAudience(e.target.value)}
+                  placeholder="e.g., Healthcare Professionals"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0a66c2]/20 focus:border-[#0a66c2] focus:bg-white transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tone Selection & Posts Count Card */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Tone Dropdown */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
+                  <MessageSquare className="w-4 h-4 text-[#0a66c2]" />
+                  Writing Style & Tone
+                </label>
+                <select
+                  value={tone}
+                  onChange={(e) => setTone(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0a66c2]/20 focus:border-[#0a66c2] focus:bg-white transition-colors appearance-none cursor-pointer"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
+                    backgroundPosition: 'right 0.5rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.5em 1.5em',
+                    paddingRight: '2.5rem'
+                  }}
+                >
+                  {toneOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.icon} {option.label} - {option.desc}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Posts Count */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="text-sm font-medium text-gray-700">Number of Posts</label>
+                  <span className="text-2xl font-bold text-[#0a66c2]">{postsCount}</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={14}
+                  value={postsCount}
+                  onChange={(e) => setPostsCount(Number(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#0a66c2]"
+                />
+                <div className="flex justify-between text-xs text-gray-400 mt-1">
+                  <span>1</span>
+                  <span>14</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <div className="mt-6">
+              <Button
+                onClick={handleGenerate}
+                disabled={loading || (!topicDescription.trim() && !selectedTemplate)}
+                className="w-full h-12 text-base gap-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Generating magic...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    Generate {postsCount} Posts
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Generated Posts Section - Full Width */}
+      <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">Generated Posts</h2>
             {generatedPosts.length > 0 && (
@@ -492,7 +595,6 @@ export default function GeneratePage() {
               ))}
             </div>
           )}
-        </div>
       </div>
     </div>
   )

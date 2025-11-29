@@ -92,3 +92,87 @@ export async function generatePostVariations(
     throw error
   }
 }
+
+// Generate LinkedIn post from template
+export async function generateFromTemplate(
+  template: {
+    name: string
+    template: string
+    variables?: string[]
+  },
+  tone: string,
+  userInput?: { topics?: string[] }
+): Promise<string> {
+  const genAI = getGeminiClient()
+
+  let prompt = `You are an expert LinkedIn ghostwriter. I have a proven LinkedIn post template that I want you to fill in with engaging content.
+
+Template Name: ${template.name}
+Tone: ${tone}
+
+Template Structure:
+${template.template}
+
+Instructions:
+- Use this EXACT template structure as your framework
+- Fill in the placeholders/variables with compelling, specific content
+${userInput?.topics && userInput.topics.length > 0 ? `- Focus the content on these topics: ${userInput.topics.join(', ')}` : ''}
+- Maintain the ${tone} tone throughout
+- Keep the same formatting, line breaks, and structure as the template
+- Make it authentic and engaging
+- Use emojis where appropriate (don't overdo it)
+- Ensure the content flows naturally
+
+Return ONLY the filled-in post content, no additional commentary.`
+
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+
+    const result = await model.generateContent(prompt)
+    const response = result.response
+    const content = response.text()
+
+    if (!content) {
+      throw new Error('No content generated')
+    }
+
+    return content.trim()
+  } catch (error: any) {
+    console.error('Gemini API Error:', error)
+
+    if (error.message?.includes('API key')) {
+      throw new Error('Invalid Gemini API key. Please check your configuration.')
+    }
+
+    if (error.message?.includes('quota')) {
+      throw new Error('Gemini API quota exceeded. Please check your billing settings.')
+    }
+
+    throw new Error(`Failed to generate post from template: ${error.message}`)
+  }
+}
+
+// Generate multiple variations from template
+export async function generateTemplateVariations(
+  template: {
+    name: string
+    template: string
+    variables?: string[]
+  },
+  tone: string,
+  count: number = 3,
+  userInput?: { topics?: string[] }
+): Promise<string[]> {
+  const promises = []
+
+  for (let i = 0; i < count; i++) {
+    promises.push(generateFromTemplate(template, tone, userInput))
+  }
+
+  try {
+    return await Promise.all(promises)
+  } catch (error) {
+    console.error('Error generating template variations:', error)
+    throw error
+  }
+}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateLinkedInPost, generatePostVariations } from '@/lib/gemini/client'
+import { generateLinkedInPost, generatePostVariations, generateTemplateVariations } from '@/lib/gemini/client'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { canGenerateAI } from '@/lib/usage/limits'
 
@@ -39,47 +39,66 @@ export async function POST(request: NextRequest) {
       tone = 'informative',
       length = 3,
       count,
-      postsCount
+      postsCount,
+      template
     } = body
 
     // Normalize parameters
     const topicsArray = topics || (topic ? [topic] : [])
     const totalCount = postsCount || count || 1
 
-    // Validate topics
-    if (!topicsArray || topicsArray.length === 0) {
+    // Validate topics (not required if template is provided)
+    if (!template && (!topicsArray || topicsArray.length === 0)) {
       return NextResponse.json(
         { error: 'Topic is required' },
         { status: 400 }
       )
     }
 
-    // Calculate posts per topic
-    const postsPerTopic = Math.max(1, Math.floor(totalCount / topicsArray.length))
     const allGeneratedPosts: GeneratedPost[] = []
 
-    // Generate posts for each topic
-    for (const topicItem of topicsArray) {
-      let posts: string[]
-
-      if (postsPerTopic > 1) {
-        // Generate multiple variations
-        posts = await generatePostVariations(topicItem, style, tone, length, postsPerTopic)
-      } else {
-        // Generate single post
-        const post = await generateLinkedInPost(topicItem, style, tone, length)
-        posts = [post]
-      }
+    // If template is provided, use template-based generation
+    if (template) {
+      const posts = await generateTemplateVariations(
+        template,
+        tone,
+        totalCount,
+        { topics: topicsArray }
+      )
 
       // Format each post with structured data
       for (const postContent of posts) {
-        const formattedPost = formatPostContent(postContent, topicItem)
+        const topicName = template.name || topicsArray[0] || 'Template Post'
+        const formattedPost = formatPostContent(postContent, topicName)
         allGeneratedPosts.push(formattedPost)
       }
+    } else {
+      // Original topic-based generation
+      const postsPerTopic = Math.max(1, Math.floor(totalCount / topicsArray.length))
 
-      // Break if we've reached the desired count
-      if (allGeneratedPosts.length >= totalCount) {
-        break
+      // Generate posts for each topic
+      for (const topicItem of topicsArray) {
+        let posts: string[]
+
+        if (postsPerTopic > 1) {
+          // Generate multiple variations
+          posts = await generatePostVariations(topicItem, style, tone, length, postsPerTopic)
+        } else {
+          // Generate single post
+          const post = await generateLinkedInPost(topicItem, style, tone, length)
+          posts = [post]
+        }
+
+        // Format each post with structured data
+        for (const postContent of posts) {
+          const formattedPost = formatPostContent(postContent, topicItem)
+          allGeneratedPosts.push(formattedPost)
+        }
+
+        // Break if we've reached the desired count
+        if (allGeneratedPosts.length >= totalCount) {
+          break
+        }
       }
     }
 
@@ -150,7 +169,8 @@ export async function POST(request: NextRequest) {
         tone,
         length,
         count: finalPosts.length,
-        posts_generated: postsGenerated
+        posts_generated: postsGenerated,
+        template_used: template ? template.name : null
       },
     })
 
