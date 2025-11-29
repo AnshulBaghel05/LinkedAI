@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -69,11 +70,14 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="w-12 h-12 bg-[#0a66c2] rounded-xl flex items-center justify-center">
-              <Linkedin className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-gray-900">LinkedAI</span>
+          <Link href="/" className="inline-flex items-center justify-center mb-6">
+            <Image
+              src="/linkedai-logo.png"
+              alt="LinkedAI Logo"
+              width={180}
+              height={48}
+              className="h-12 w-auto"
+            />
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
           <p className="text-gray-600">Sign in to continue to your dashboard</p>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { Linkedin, Twitter, Instagram, Youtube, Mail, MapPin, Phone } from 'lucide-react'
 
 const footerLinks = {
@@ -43,11 +44,14 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8">
           {/* Brand Column */}
           <div className="col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 bg-[#0a66c2] rounded-lg flex items-center justify-center">
-                <Linkedin className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">LinkedAI</span>
+            <Link href="/" className="flex items-center mb-4">
+              <Image
+                src="/linkedai-logo.png"
+                alt="LinkedAI Logo"
+                width={150}
+                height={40}
+                className="h-10 w-auto"
+              />
             </Link>
             <p className="text-gray-600 mb-6 max-w-xs">
               AI-powered LinkedIn content creation and scheduling. Grow your professional presence effortlessly.

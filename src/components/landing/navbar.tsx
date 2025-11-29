@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Menu, X, Linkedin } from 'lucide-react'
 
@@ -33,11 +34,15 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 bg-[#0a66c2] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-              <Linkedin className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">LinkedAI</span>
+          <Link href="/" className="flex items-center group">
+            <Image
+              src="/linkedai-logo.png"
+              alt="LinkedAI Logo"
+              width={150}
+              height={40}
+              className="h-10 w-auto group-hover:scale-105 transition-transform"
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation */}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Linkedin, LayoutDashboard, Wand2, Calendar, FileText, Clock, Settings, LogOut, Menu, X, Sparkles, LifeBuoy, BarChart3, Building2, Bell, Zap, Key, TrendingUp, TestTube2, Lock } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
@@ -85,11 +86,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       `}>
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-[#0a66c2] rounded-xl flex items-center justify-center">
-                <Linkedin className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold text-gray-900">LinkedAI</span>
+            <Link href="/dashboard" className="flex items-center">
+              <Image
+                src="/linkedai-logo.png"
+                alt="LinkedAI Logo"
+                width={150}
+                height={40}
+                className="h-10 w-auto"
+                priority
+              />
             </Link>
 
             {/* Notification Bell */}
