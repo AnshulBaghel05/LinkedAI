@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Lock, Loader2, Eye, EyeOff, CheckCircle } from 'lucide-react'
@@ -17,22 +17,44 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isValidToken, setIsValidToken] = useState(false)
   const [passwordChanged, setPasswordChanged] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   useEffect(() => {
-    // Check if we have a valid session (user clicked the reset link)
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        setIsValidToken(true)
-      } else {
-        toast.error('Invalid or expired reset link')
+    // Get token from URL query parameter
+    const tokenFromUrl = searchParams.get('token')
+
+    if (!tokenFromUrl) {
+      toast.error('Invalid reset link')
+      setTimeout(() => router.push('/forgot-password'), 2000)
+      return
+    }
+
+    setToken(tokenFromUrl)
+
+    // Validate the token
+    const validateToken = async () => {
+      try {
+        const response = await fetch(`/api/auth/reset-password?token=${tokenFromUrl}`)
+        const data = await response.json()
+
+        if (data.valid) {
+          setIsValidToken(true)
+        } else {
+          toast.error(data.error || 'Invalid or expired reset link')
+          setTimeout(() => router.push('/forgot-password'), 2000)
+        }
+      } catch (error) {
+        console.error('Token validation error:', error)
+        toast.error('Failed to validate reset link')
         setTimeout(() => router.push('/forgot-password'), 2000)
       }
     }
-    checkSession()
-  }, [supabase, router])
+
+    validateToken()
+  }, [searchParams, router])
 
   const validatePassword = () => {
     if (password.length < 6) {
@@ -50,16 +72,29 @@ export default function ResetPasswordPage() {
     e.preventDefault()
 
     if (!validatePassword()) return
+    if (!token) {
+      toast.error('Invalid reset token')
+      return
+    }
 
     setLoading(true)
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          token,
+          password,
+        }),
       })
 
-      if (error) {
-        toast.error(error.message)
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast.error(data.error || 'Failed to reset password')
         setLoading(false)
         return
       }
