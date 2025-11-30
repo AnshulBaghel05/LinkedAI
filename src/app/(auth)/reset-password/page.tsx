@@ -15,46 +15,33 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isValidToken, setIsValidToken] = useState(false)
+  const [isValidSession, setIsValidSession] = useState(false)
   const [passwordChanged, setPasswordChanged] = useState(false)
-  const [token, setToken] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
 
   useEffect(() => {
-    // Get token from URL query parameter
-    const tokenFromUrl = searchParams.get('token')
-
-    if (!tokenFromUrl) {
-      toast.error('Invalid reset link')
-      setTimeout(() => router.push('/forgot-password'), 2000)
-      return
-    }
-
-    setToken(tokenFromUrl)
-
-    // Validate the token
-    const validateToken = async () => {
+    // Check for active Supabase session
+    const checkSession = async () => {
       try {
-        const response = await fetch(`/api/auth/reset-password?token=${tokenFromUrl}`)
-        const data = await response.json()
+        const { data: { session } } = await supabase.auth.getSession()
 
-        if (data.valid) {
-          setIsValidToken(true)
+        if (session) {
+          setIsValidSession(true)
         } else {
-          toast.error(data.error || 'Invalid or expired reset link')
+          toast.error('Invalid or expired reset link')
           setTimeout(() => router.push('/forgot-password'), 2000)
         }
       } catch (error) {
-        console.error('Token validation error:', error)
+        console.error('Session validation error:', error)
         toast.error('Failed to validate reset link')
         setTimeout(() => router.push('/forgot-password'), 2000)
       }
     }
 
-    validateToken()
-  }, [searchParams, router])
+    checkSession()
+  }, [router, supabase.auth])
 
   const validatePassword = () => {
     if (password.length < 6) {
@@ -72,29 +59,16 @@ function ResetPasswordForm() {
     e.preventDefault()
 
     if (!validatePassword()) return
-    if (!token) {
-      toast.error('Invalid reset token')
-      return
-    }
 
     setLoading(true)
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          password,
-        }),
+      const { error } = await supabase.auth.updateUser({
+        password: password
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        toast.error(data.error || 'Failed to reset password')
+      if (error) {
+        toast.error(error.message || 'Failed to reset password')
         setLoading(false)
         return
       }
@@ -113,7 +87,7 @@ function ResetPasswordForm() {
     }
   }
 
-  if (!isValidToken) {
+  if (!isValidSession) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
         <div className="w-full max-w-md">

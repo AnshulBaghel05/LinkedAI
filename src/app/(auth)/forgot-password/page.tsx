@@ -19,18 +19,12 @@ export default function ForgotPasswordPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/auth/request-password-reset', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=/reset-password`,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        toast.error(data.error || 'Failed to send reset email')
+      if (error) {
+        toast.error(error.message || 'Failed to send reset email')
         setLoading(false)
         return
       }
