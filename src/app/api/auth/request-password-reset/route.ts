@@ -9,6 +9,8 @@ export async function POST(request: Request) {
   try {
     const { email } = await request.json()
 
+    console.log('Password reset request for:', email)
+
     if (!email) {
       return NextResponse.json(
         { error: 'Email is required' },
@@ -18,16 +20,27 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient()
 
-    // Check if user exists with this email
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, email')
-      .eq('email', email)
-      .single()
+    // Try to get user by email from auth.users using getUserByEmail
+    let userId: string | null = null
+
+    try {
+      const { data: authUser, error: authError } = await supabase.auth.admin.getUserByEmail(email)
+
+      if (authError) {
+        console.log('Auth error:', authError.message)
+      }
+
+      if (authUser?.user) {
+        userId = authUser.user.id
+        console.log('Found user:', userId)
+      }
+    } catch (err) {
+      console.error('Error checking user:', err)
+    }
 
     // Don't reveal if email exists or not for security
-    if (profileError || !profile) {
-      console.log('User not found or error:', email, profileError?.message)
+    if (!userId) {
+      console.log('User not found:', email)
       // Still return success to prevent email enumeration
       return NextResponse.json(
         { success: true, message: 'If an account exists with this email, a password reset link has been sent.' },
@@ -43,7 +56,7 @@ export async function POST(request: Request) {
     const { error: tokenError } = await supabase
       .from('password_reset_tokens')
       .insert({
-        user_id: profile.id,
+        user_id: userId,
         token,
         email,
         expires_at: expiresAt.toISOString(),
