@@ -18,14 +18,17 @@ export async function POST(request: Request) {
 
     const supabase = createAdminClient()
 
-    // Check if user exists with this email in auth.users table
-    const { data: { users }, error: userError } = await supabase.auth.admin.listUsers()
-
-    const user = users?.find(u => u.email === email)
+    // Check if user exists with this email
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .eq('email', email)
+      .single()
 
     // Don't reveal if email exists or not for security
-    if (userError || !user) {
-      console.log('User not found:', email)
+    if (profileError || !profile) {
+      console.log('User not found or error:', email, profileError?.message)
+      // Still return success to prevent email enumeration
       return NextResponse.json(
         { success: true, message: 'If an account exists with this email, a password reset link has been sent.' },
         { status: 200 }
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
     const { error: tokenError } = await supabase
       .from('password_reset_tokens')
       .insert({
-        user_id: user.id,
+        user_id: profile.id,
         token,
         email,
         expires_at: expiresAt.toISOString(),
