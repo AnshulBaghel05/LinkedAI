@@ -13,13 +13,14 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      // Check if this is a password recovery flow
+      // If type=recovery parameter is present, it's password reset
       if (type === 'recovery') {
         return NextResponse.redirect(`${requestUrl.origin}/reset-password`)
       }
 
-      // For other auth flows (signup confirmation, etc.)
-      return NextResponse.redirect(`${requestUrl.origin}${next}`)
+      // For all other cases from email links, assume it's password reset
+      // (since Supabase password reset emails don't include type parameter by default)
+      return NextResponse.redirect(`${requestUrl.origin}/reset-password`)
     }
   }
 
