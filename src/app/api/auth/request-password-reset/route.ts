@@ -74,8 +74,11 @@ export async function POST(request: Request) {
     const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`
 
     // Send email via Resend using the password-reset template
-    const { error: emailError } = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@linkedai.site',
+    console.log('Sending email from:', process.env.RESEND_FROM_EMAIL || 'noreply@linkedai.site')
+    console.log('Sending email to:', email)
+
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: 'LinkedAI <noreply@linkedai.site>',
       to: [email],
       subject: 'Reset your LinkedAI password',
       html: `
@@ -176,7 +179,10 @@ export async function POST(request: Request) {
       )
     }
 
-    console.log('Password reset email sent successfully to:', email)
+    console.log('Password reset email sent successfully!')
+    console.log('Email ID:', emailData?.id)
+    console.log('To:', email)
+    console.log('Reset link:', resetLink)
 
     return NextResponse.json(
       { success: true, message: 'If an account exists with this email, a password reset link has been sent.' },
