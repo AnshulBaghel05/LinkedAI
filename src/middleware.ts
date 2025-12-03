@@ -6,10 +6,9 @@ export async function middleware(request: NextRequest) {
   const code = requestUrl.searchParams.get('code')
 
   // If there's an auth code in the URL and we're not already on the callback route
-  // Exclude API routes (LinkedIn OAuth, NextAuth) from this redirect
+  // Exclude API routes (LinkedIn OAuth) from this redirect
   if (code &&
       !requestUrl.pathname.startsWith('/auth/callback') &&
-      !requestUrl.pathname.startsWith('/api/auth') &&
       !requestUrl.pathname.startsWith('/api/linkedin-oauth')) {
     // Redirect Supabase auth codes to callback handler
     // The callback handler will determine the final destination based on 'next' param
@@ -69,12 +68,11 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - api/linkedin-oauth (LinkedIn OAuth - must bypass middleware completely)
-     * - api/auth (NextAuth routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files (images, etc.)
      */
-    '/((?!api/linkedin-oauth|api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api/linkedin-oauth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
