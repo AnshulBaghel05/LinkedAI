@@ -9,7 +9,8 @@ export async function middleware(request: NextRequest) {
   // Exclude API routes (LinkedIn OAuth, NextAuth) from this redirect
   if (code &&
       !requestUrl.pathname.startsWith('/auth/callback') &&
-      !requestUrl.pathname.startsWith('/api/auth')) {
+      !requestUrl.pathname.startsWith('/api/auth') &&
+      !requestUrl.pathname.startsWith('/api/linkedin-oauth')) {
     // Only redirect Supabase auth codes (password reset, Google OAuth)
     // This allows LinkedIn OAuth and other API-based auth to work normally
     const callbackUrl = new URL('/auth/callback', request.url)
@@ -56,12 +57,13 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
+     * - api/linkedin-oauth (LinkedIn OAuth - must bypass middleware completely)
+     * - api/auth (NextAuth routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files (images, etc.)
-     * - api/linkedin-oauth (LinkedIn OAuth routes - must be excluded)
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/linkedin-oauth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api/linkedin-oauth|api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
