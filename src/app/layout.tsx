@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import { Analytics } from "@vercel/analytics/next";
 import { PostHogProvider } from "@/components/providers/PostHogProvider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import "./globals.css";
@@ -26,6 +27,7 @@ export default function RootLayout({
           <PostHogProvider>
             <Toaster position="top-right" />
             {children}
+            <Analytics />
           </PostHogProvider>
         </SessionProvider>
       </body>
