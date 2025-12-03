@@ -11,11 +11,22 @@ export async function middleware(request: NextRequest) {
       !requestUrl.pathname.startsWith('/auth/callback') &&
       !requestUrl.pathname.startsWith('/api/auth') &&
       !requestUrl.pathname.startsWith('/api/linkedin-oauth')) {
-    // Only redirect Supabase auth codes (password reset, Google OAuth)
-    // This allows LinkedIn OAuth and other API-based auth to work normally
+    // Redirect Supabase auth codes to callback handler
+    // The callback handler will determine the final destination based on 'next' param
     const callbackUrl = new URL('/auth/callback', request.url)
     callbackUrl.searchParams.set('code', code)
-    callbackUrl.searchParams.set('next', '/reset-password')
+
+    // Preserve the 'next' parameter if it exists in the original URL
+    const nextParam = requestUrl.searchParams.get('next')
+    if (nextParam) {
+      callbackUrl.searchParams.set('next', nextParam)
+    }
+
+    console.log('[Middleware] Redirecting to callback:', {
+      from: requestUrl.pathname,
+      to: callbackUrl.pathname,
+      next: nextParam
+    })
 
     return NextResponse.redirect(callbackUrl)
   }

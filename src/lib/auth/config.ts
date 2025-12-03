@@ -1,13 +1,10 @@
 import { NextAuthOptions } from 'next-auth'
 import { SupabaseAdapter } from '@auth/supabase-adapter'
-import LinkedInProvider from 'next-auth/providers/linkedin'
 import GoogleProvider from 'next-auth/providers/google'
 
 // Get environment variables with defaults for build time
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-const linkedinClientId = process.env.LINKEDIN_CLIENT_ID || ''
-const linkedinClientSecret = process.env.LINKEDIN_CLIENT_SECRET || ''
 
 export const authOptions: NextAuthOptions = {
   // Use Supabase adapter for session and user management
@@ -18,8 +15,8 @@ export const authOptions: NextAuthOptions = {
 
   // Authentication providers
   providers: [
-    // NOTE: LinkedIn OAuth is handled by custom handler at /api/auth/linkedin
-    // for multi-account support. Do NOT add LinkedIn provider here as it conflicts.
+    // NOTE: LinkedIn OAuth is handled by custom handler at /api/linkedin-oauth
+    // for multi-account support. Do NOT add LinkedIn provider here as it conflicts with our custom implementation.
 
     // Google OAuth (optional - requires setup)
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
