@@ -65,7 +65,7 @@ export default function LinkedInAccountsManager({
       toast.error(`You've reached the limit of ${limits.maxAccounts} LinkedIn account(s) for your ${userPlan} plan.`)
       return
     }
-    window.location.href = '/api/linkedin-oauth/authorize'
+    window.location.href = '/api/linkedin-oauth'
   }
 
   const handleSetPrimary = async (accountId: string) => {
