@@ -40,6 +40,32 @@ export async function GET(request: NextRequest) {
 
       console.log('[Auth Callback] Session exchanged successfully for user:', data.user?.email)
 
+      // Check if this is a LinkedIn connection from settings
+      const linkedinConnect = requestUrl.searchParams.get('linkedin_connect')
+
+      if (linkedinConnect === 'true' && next === '/settings') {
+        console.log('[Auth Callback] LinkedIn account connection detected')
+
+        // Check if user has LinkedIn identity
+        const linkedinIdentity = data.user?.identities?.find(
+          (identity: any) => identity.provider === 'linkedin_oidc'
+        )
+
+        if (linkedinIdentity) {
+          // TODO: Store LinkedIn account in your linkedin_accounts table
+          // You can access LinkedIn data from linkedinIdentity.identity_data
+          console.log('[Auth Callback] LinkedIn identity:', {
+            provider: linkedinIdentity.provider,
+            id: linkedinIdentity.id,
+            email: linkedinIdentity.identity_data?.email
+          })
+
+          return NextResponse.redirect(
+            new URL('/settings?success=LinkedIn account connected successfully!', request.url)
+          )
+        }
+      }
+
       // Determine redirect based on 'next' parameter
       // If next is specified in URL, use it
       // Otherwise default to /dashboard for successful auth

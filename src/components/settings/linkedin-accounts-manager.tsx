@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Linkedin, Plus, Star, Trash2, CheckCircle, AlertCircle, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import toast from 'react-hot-toast'
+import { createClient } from '@/lib/supabase/client'
 
 interface LinkedInAccount {
   id: string
@@ -60,12 +61,26 @@ export default function LinkedInAccountsManager({
     }
   }
 
-  const handleAddAccount = () => {
+  const handleAddAccount = async () => {
     if (accounts.length >= limits.maxAccounts) {
       toast.error(`You've reached the limit of ${limits.maxAccounts} LinkedIn account(s) for your ${userPlan} plan.`)
       return
     }
-    window.location.href = '/api/linkedin-oauth'
+
+    // Use Supabase's LinkedIn OAuth provider
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/settings&linkedin_connect=true`,
+        scopes: 'openid profile email w_member_social'
+      }
+    })
+
+    if (error) {
+      console.error('LinkedIn OAuth error:', error)
+      toast.error('Failed to connect LinkedIn. Please try again.')
+    }
   }
 
   const handleSetPrimary = async (accountId: string) => {

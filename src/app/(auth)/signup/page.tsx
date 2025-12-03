@@ -62,7 +62,21 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+      },
+    })
+
+    if (error) {
+      toast.error(error.message)
+    }
+  }
+
+  const handleLinkedInSignup = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        scopes: 'openid profile email w_member_social'
       },
     })
 
@@ -90,6 +104,14 @@ export default function SignupPage() {
         </div>
 
         <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200">
+          <button
+            onClick={handleLinkedInSignup}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-[#0A66C2] text-white rounded-xl font-medium hover:bg-[#004182] transition mb-3"
+          >
+            <Linkedin className="w-5 h-5" />
+            Continue with LinkedIn
+          </button>
+
           <button
             onClick={handleGoogleSignup}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-xl font-medium hover:bg-gray-50 transition mb-6"

@@ -6,25 +6,29 @@ export async function middleware(request: NextRequest) {
   const code = requestUrl.searchParams.get('code')
 
   // If there's an auth code in the URL and we're not already on the callback route
-  // Exclude API routes (LinkedIn OAuth) from this redirect
-  if (code &&
-      !requestUrl.pathname.startsWith('/auth/callback') &&
-      !requestUrl.pathname.startsWith('/api/linkedin-oauth')) {
+  // All Supabase OAuth (LinkedIn, Google, email confirmation, password reset) uses /auth/callback
+  if (code && !requestUrl.pathname.startsWith('/auth/callback')) {
     // Redirect Supabase auth codes to callback handler
     // The callback handler will determine the final destination based on 'next' param
     const callbackUrl = new URL('/auth/callback', request.url)
     callbackUrl.searchParams.set('code', code)
 
-    // Preserve the 'next' parameter if it exists in the original URL
+    // Preserve all query parameters
     const nextParam = requestUrl.searchParams.get('next')
+    const linkedinConnect = requestUrl.searchParams.get('linkedin_connect')
+
     if (nextParam) {
       callbackUrl.searchParams.set('next', nextParam)
+    }
+    if (linkedinConnect) {
+      callbackUrl.searchParams.set('linkedin_connect', linkedinConnect)
     }
 
     console.log('[Middleware] Redirecting to callback:', {
       from: requestUrl.pathname,
       to: callbackUrl.pathname,
-      next: nextParam
+      next: nextParam,
+      linkedinConnect
     })
 
     return NextResponse.redirect(callbackUrl)
@@ -67,12 +71,11 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api/linkedin-oauth (LinkedIn OAuth - must bypass middleware completely)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public files (images, etc.)
      */
-    '/((?!api/linkedin-oauth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
