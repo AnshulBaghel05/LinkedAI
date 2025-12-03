@@ -85,13 +85,25 @@ export async function GET(request: NextRequest) {
     const profileName = userInfo.name || userInfo.given_name
     const profilePictureUrl = userInfo.picture
 
-    // Get authenticated user
+    // Get authenticated user - check session first
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-    if (!user) {
-      throw new Error('User not authenticated')
+    console.log('Session check:', {
+      hasSession: !!session,
+      sessionError: sessionError?.message,
+      hasUser: !!session?.user
+    })
+
+    if (sessionError || !session?.user) {
+      console.error('User authentication error:', sessionError)
+      // Redirect to login with message to reconnect
+      return NextResponse.redirect(
+        new URL('/login?error=Session expired. Please sign in again and try connecting LinkedIn.', request.url)
+      )
     }
+
+    const user = session.user
 
     // Use admin client to ensure profile exists
     const adminClient = createAdminClient()
