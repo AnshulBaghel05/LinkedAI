@@ -66,37 +66,8 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Check if this is an email confirmation (from signup)
-      // Users who just confirmed their email should be redirected to login
-      const isEmailConfirmation = next === '/login'
-
-      if (isEmailConfirmation) {
-        console.log('[Auth Callback] Email confirmation detected, redirecting to login')
-
-        // Check which provider was used for signup
-        const hasLinkedInIdentity = data.user?.identities?.some(
-          (identity: any) => identity.provider === 'linkedin_oidc'
-        )
-        const hasGoogleIdentity = data.user?.identities?.some(
-          (identity: any) => identity.provider === 'google'
-        )
-
-        let message = 'Email confirmed! Please sign in to continue.'
-
-        if (hasLinkedInIdentity) {
-          message = 'Email confirmed! Please sign in with LinkedIn to continue.'
-        } else if (hasGoogleIdentity) {
-          message = 'Email confirmed! Please sign in with Google to continue.'
-        }
-
-        return NextResponse.redirect(
-          new URL(`/login?success=${encodeURIComponent(message)}`, request.url)
-        )
-      }
-
       // Determine redirect based on 'next' parameter
-      // If next is specified in URL, use it
-      // Otherwise default to /dashboard for successful auth
+      // All successful authentications go to their specified destination or dashboard
       const redirectPath = next || '/dashboard'
 
       console.log('[Auth Callback] Redirecting to:', redirectPath)

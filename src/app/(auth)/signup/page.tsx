@@ -38,13 +38,14 @@ export default function SignupPage() {
     e.preventDefault()
     setLoading(true)
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: name,
         },
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
       },
     })
 
@@ -54,15 +55,22 @@ export default function SignupPage() {
       return
     }
 
-    toast.success('Check your email to confirm your account!')
-    router.push('/login')
+    // If email confirmation is disabled, user is auto-confirmed
+    if (data.session) {
+      toast.success('Account created successfully!')
+      router.push('/dashboard')
+    } else {
+      // If email confirmation is enabled, show message
+      toast.success('Check your email to confirm your account!')
+      router.push('/login')
+    }
   }
 
   const handleGoogleSignup = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/login`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
       },
     })
 
@@ -75,7 +83,7 @@ export default function SignupPage() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'linkedin_oidc',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/login`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
         scopes: 'openid profile email w_member_social'
       },
     })
