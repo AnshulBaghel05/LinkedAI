@@ -54,6 +54,14 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files (images, etc.)
+     * - api/linkedin-oauth (LinkedIn OAuth routes - must be excluded)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|api/linkedin-oauth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
