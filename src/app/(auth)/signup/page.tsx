@@ -45,7 +45,7 @@ export default function SignupPage() {
         data: {
           full_name: name,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/login`,
       },
     })
 
@@ -55,15 +55,11 @@ export default function SignupPage() {
       return
     }
 
-    // If email confirmation is disabled, user is auto-confirmed
-    if (data.session) {
-      toast.success('Account created successfully!')
-      router.push('/dashboard')
-    } else {
-      // If email confirmation is enabled, show message
-      toast.success('Check your email to confirm your account!')
-      router.push('/login')
-    }
+    // Manual signups always require email confirmation
+    toast.success('Check your email to confirm your account!')
+    setLoading(false)
+    // Keep user on page or redirect to login
+    router.push('/login')
   }
 
   const handleGoogleSignup = async () => {

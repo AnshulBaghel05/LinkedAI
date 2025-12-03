@@ -66,6 +66,16 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Check if this is an email confirmation (from manual signup)
+      const isEmailConfirmation = next === '/login'
+
+      if (isEmailConfirmation) {
+        console.log('[Auth Callback] Email confirmation detected')
+        return NextResponse.redirect(
+          new URL('/login?success=Email confirmed! Please sign in to continue.', request.url)
+        )
+      }
+
       // Determine redirect based on 'next' parameter
       // All successful authentications go to their specified destination or dashboard
       const redirectPath = next || '/dashboard'
