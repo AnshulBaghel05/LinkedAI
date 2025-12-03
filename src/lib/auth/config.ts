@@ -18,16 +18,8 @@ export const authOptions: NextAuthOptions = {
 
   // Authentication providers
   providers: [
-    // LinkedIn OAuth
-    LinkedInProvider({
-      clientId: linkedinClientId,
-      clientSecret: linkedinClientSecret,
-      authorization: {
-        params: {
-          scope: 'openid profile email w_member_social',
-        },
-      },
-    }),
+    // NOTE: LinkedIn OAuth is handled by custom handler at /api/auth/linkedin
+    // for multi-account support. Do NOT add LinkedIn provider here as it conflicts.
 
     // Google OAuth (optional - requires setup)
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -87,13 +79,6 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.email = user.email
-      }
-
-      // Store LinkedIn access token if available
-      if (account?.provider === 'linkedin') {
-        token.linkedinAccessToken = account.access_token
-        token.linkedinRefreshToken = account.refresh_token
-        token.linkedinExpiresAt = account.expires_at
       }
 
       return token
