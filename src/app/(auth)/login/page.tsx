@@ -32,6 +32,22 @@ export default function LoginPage() {
       }
     }
     clearInvalidSession()
+
+    // Check for success message (from email confirmation)
+    const params = new URLSearchParams(window.location.search)
+    const success = params.get('success')
+    const error = params.get('error')
+
+    if (success) {
+      toast.success(success)
+      // Remove query params from URL
+      window.history.replaceState({}, '', '/login')
+    }
+    if (error) {
+      toast.error(error)
+      // Remove query params from URL
+      window.history.replaceState({}, '', '/login')
+    }
   }, [])
 
   const handleLogin = async (e: React.FormEvent) => {

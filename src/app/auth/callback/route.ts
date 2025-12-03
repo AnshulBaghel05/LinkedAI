@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
 
       console.log('[Auth Callback] Session exchanged successfully for user:', data.user?.email)
 
-      // Check if this is a LinkedIn connection from settings
+      // Check if this is a LinkedIn connection from settings (user already logged in)
       const linkedinConnect = requestUrl.searchParams.get('linkedin_connect')
 
       if (linkedinConnect === 'true' && next === '/settings') {
@@ -64,6 +64,34 @@ export async function GET(request: NextRequest) {
             new URL('/settings?success=LinkedIn account connected successfully!', request.url)
           )
         }
+      }
+
+      // Check if this is an email confirmation (from signup)
+      // Users who just confirmed their email should be redirected to login
+      const isEmailConfirmation = next === '/login'
+
+      if (isEmailConfirmation) {
+        console.log('[Auth Callback] Email confirmation detected, redirecting to login')
+
+        // Check which provider was used for signup
+        const hasLinkedInIdentity = data.user?.identities?.some(
+          (identity: any) => identity.provider === 'linkedin_oidc'
+        )
+        const hasGoogleIdentity = data.user?.identities?.some(
+          (identity: any) => identity.provider === 'google'
+        )
+
+        let message = 'Email confirmed! Please sign in to continue.'
+
+        if (hasLinkedInIdentity) {
+          message = 'Email confirmed! Please sign in with LinkedIn to continue.'
+        } else if (hasGoogleIdentity) {
+          message = 'Email confirmed! Please sign in with Google to continue.'
+        }
+
+        return NextResponse.redirect(
+          new URL(`/login?success=${encodeURIComponent(message)}`, request.url)
+        )
       }
 
       // Determine redirect based on 'next' parameter
