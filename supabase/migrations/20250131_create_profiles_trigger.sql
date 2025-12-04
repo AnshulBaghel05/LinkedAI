@@ -1,36 +1,8 @@
 -- Migration: Auto-create profile when new user signs up
 -- This ensures every auth user has a corresponding profile record
 
--- Create profiles table if it doesn't exist
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-
-  -- Basic Info
-  full_name TEXT,
-  avatar_url TEXT,
-
-  -- LinkedIn Connection (legacy - kept for backward compatibility)
-  linkedin_connected BOOLEAN DEFAULT FALSE,
-  linkedin_user_id TEXT,
-  linkedin_access_token TEXT,
-  linkedin_refresh_token TEXT,
-  linkedin_token_expires_at TIMESTAMP WITH TIME ZONE,
-  linkedin_profile_url TEXT,
-
-  -- Subscription & Limits
-  subscription_plan TEXT DEFAULT 'free',
-  subscription_status TEXT DEFAULT 'active',
-  posts_limit INTEGER DEFAULT 20,
-  posts_used INTEGER DEFAULT 0,
-  linkedin_accounts_limit INTEGER DEFAULT 1,
-
-  -- Brand Voice
-  brand_voice TEXT,
-
-  -- Timestamps
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Note: profiles table should already exist, so we don't recreate it
+-- Just ensure the trigger exists to auto-create profiles for new users
 
 -- Enable RLS
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -57,6 +29,7 @@ RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (
     id,
+    email,
     full_name,
     avatar_url,
     subscription_plan,
@@ -65,6 +38,7 @@ BEGIN
   )
   VALUES (
     NEW.id,
+    NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', ''),
     COALESCE(NEW.raw_user_meta_data->>'avatar_url', NEW.raw_user_meta_data->>'picture', ''),
     'free',
@@ -87,6 +61,7 @@ CREATE TRIGGER on_auth_user_created
 -- Backfill profiles for existing users without profiles
 INSERT INTO public.profiles (
   id,
+  email,
   full_name,
   subscription_plan,
   posts_limit,
@@ -95,6 +70,7 @@ INSERT INTO public.profiles (
 )
 SELECT
   u.id,
+  u.email,
   COALESCE(u.raw_user_meta_data->>'full_name', u.raw_user_meta_data->>'name', ''),
   'free',
   20,
