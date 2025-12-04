@@ -25,15 +25,14 @@ ENVIRONMENT = "production"
 [build]
 command = ""
 
-[env.production]
-name = "linkedin-scheduler-cron"
-route = { pattern = "cron.linkedai.site/*", zone_name = "linkedai.site" }
+# Environments (commented out - using workers.dev subdomain instead)
+# [env.production]
+# name = "linkedin-scheduler-cron"
+# route = { pattern = "cron.linkedai.site/*", zone_name = "linkedai.site" }
 
-[env.staging]
-name = "linkedin-scheduler-cron-staging"
+# [env.staging]
+# name = "linkedin-scheduler-cron-staging"
 
 # Resources Configuration
-[limits]
 # Free tier: 100,000 requests/day
-# First 10ms CPU time is free
-cpu_ms = 50  # Max CPU time per request
+# CPU limits are automatically managed by Cloudflare
