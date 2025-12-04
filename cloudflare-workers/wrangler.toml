@@ -1,0 +1,39 @@
+# Cloudflare Workers Configuration
+# Documentation: https://developers.cloudflare.com/workers/
+
+name = "linkedin-scheduler-cron"
+main = "cron-worker.js"
+compatibility_date = "2024-01-01"
+
+# Cron Triggers
+# Every minute: "* * * * *"
+# Every 15 minutes: "*/15 * * * *"
+# Every hour: "0 * * * *"
+# Every 6 hours: "0 */6 * * *"
+
+[triggers]
+crons = [
+  "*/15 * * * *"  # Publish scheduled posts every 15 minutes
+]
+
+# Environment Variables
+# Set secrets using: wrangler secret put CRON_SECRET
+[vars]
+ENVIRONMENT = "production"
+
+# Deployment Configuration
+[build]
+command = ""
+
+[env.production]
+name = "linkedin-scheduler-cron"
+route = { pattern = "cron.linkedai.site/*", zone_name = "linkedai.site" }
+
+[env.staging]
+name = "linkedin-scheduler-cron-staging"
+
+# Resources Configuration
+[limits]
+# Free tier: 100,000 requests/day
+# First 10ms CPU time is free
+cpu_ms = 50  # Max CPU time per request
