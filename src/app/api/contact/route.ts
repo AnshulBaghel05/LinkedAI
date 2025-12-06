@@ -10,13 +10,6 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
     const body = await request.json()
     const { name, email, subject, message } = body
 
@@ -38,21 +31,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Store the contact submission in the database for record keeping
-    const { error: dbError } = await supabase
-      .from('contact_submissions')
-      .insert({
-        user_id: user.id,
-        name,
-        email,
-        subject,
-        message,
-        user_agent: request.headers.get('user-agent') || 'unknown',
-        ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
-      })
+    // Only if user is authenticated
+    if (user) {
+      const { error: dbError } = await supabase
+        .from('contact_submissions')
+        .insert({
+          user_id: user.id,
+          name,
+          email,
+          subject,
+          message,
+          user_agent: request.headers.get('user-agent') || 'unknown',
+          ip_address: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown',
+        })
 
-    if (dbError) {
-      console.error('Error storing contact submission:', dbError)
-      // Don't fail the request if we can't store it, just log it
+      if (dbError) {
+        console.error('Error storing contact submission:', dbError)
+        // Don't fail the request if we can't store it, just log it
+      }
     }
 
     // In a production environment, you would send an actual email here
@@ -104,16 +100,18 @@ export async function POST(request: NextRequest) {
     })
     */
 
-    // Log activity
-    await supabase.from('user_activity_logs').insert({
-      user_id: user.id,
-      activity_type: 'contact_form_submitted',
-      activity_data: {
-        subject,
-        name,
-        email
-      },
-    })
+    // Log activity (only for authenticated users)
+    if (user) {
+      await supabase.from('user_activity_logs').insert({
+        user_id: user.id,
+        activity_type: 'contact_form_submitted',
+        activity_data: {
+          subject,
+          name,
+          email
+        },
+      })
+    }
 
     return NextResponse.json({
       success: true,

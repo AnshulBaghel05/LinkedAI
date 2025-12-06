@@ -17,10 +17,32 @@ export default function ContactPage() {
     message: '',
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast.success('Message sent! We will get back to you soon.')
-    setFormData({ name: '', email: '', subject: '', message: '' })
+    setLoading(true)
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send message')
+      }
+
+      toast.success('Message sent! We will get back to you soon.')
+      setFormData({ name: '', email: '', subject: '', message: '' })
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send message. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -96,9 +118,9 @@ export default function ContactPage() {
                     required
                   />
                 </div>
-                <Button type="submit" size="lg">
+                <Button type="submit" size="lg" disabled={loading}>
                   <Send className="w-5 h-5 mr-2" />
-                  Send Message
+                  {loading ? 'Sending...' : 'Send Message'}
                 </Button>
               </form>
             </div>
@@ -113,8 +135,9 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
-                    <p className="text-gray-600">hello@linkedai.com</p>
-                    <p className="text-gray-600">support@linkedai.com</p>
+                    <a href="mailto:support@linkedai.site" className="text-[#0a66c2] hover:underline">
+                      support@linkedai.site
+                    </a>
                   </div>
                 </div>
 
