@@ -1,11 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Navbar } from '@/components/landing/navbar'
 import { Footer } from '@/components/landing/footer'
 import { Button } from '@/components/ui/button'
-import { Check, Sparkles, Zap, Star, Crown } from 'lucide-react'
+import { Check, Sparkles, Zap, Star, Crown, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 const plans = [
   {
@@ -127,23 +129,125 @@ const plans = [
 ]
 
 export default function PricingPage() {
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('monthly')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [currentPlan, setCurrentPlan] = useState<string>('free')
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+  const router = useRouter()
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (session?.user) {
+        setIsAuthenticated(true)
+
+        // Get user's current subscription plan
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_plan')
+          .eq('id', session.user.id)
+          .single()
+
+        if (profile?.subscription_plan) {
+          setCurrentPlan(profile.subscription_plan.toLowerCase())
+        }
+      }
+
+      setLoading(false)
+    }
+
+    checkAuth()
+  }, [])
+
+  const handlePlanSelection = async (planId: string) => {
+    if (!isAuthenticated) {
+      // Redirect to signup with plan parameter
+      const plan = plans.find(p => p.id === planId)
+      if (plan) {
+        router.push(plan.buttonLink)
+      }
+      return
+    }
+
+    // For authenticated users, handle plan upgrade/downgrade
+    if (planId === 'custom') {
+      router.push('/contact')
+      return
+    }
+
+    if (planId === currentPlan) {
+      return // Already on this plan
+    }
+
+    // TODO: Implement payment flow for plan changes
+    // For now, redirect to payment or show upgrade modal
+    router.push(`/checkout?plan=${planId}`)
+  }
+
+  const getButtonText = (planId: string) => {
+    if (!isAuthenticated) {
+      const plan = plans.find(p => p.id === planId)
+      return plan?.buttonText || 'Get Started'
+    }
+
+    if (planId === currentPlan) {
+      return 'Current Plan'
+    }
+
+    const currentIndex = plans.findIndex(p => p.id === currentPlan)
+    const targetIndex = plans.findIndex(p => p.id === planId)
+
+    if (targetIndex > currentIndex) {
+      return 'Upgrade'
+    } else if (targetIndex < currentIndex) {
+      return 'Downgrade'
+    }
+
+    return 'Select Plan'
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#0a66c2] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-white">
-      <Navbar />
+      {/* Only show public navbar if not authenticated */}
+      {!isAuthenticated && <Navbar />}
+
+      {/* Show back button for authenticated users */}
+      {isAuthenticated && (
+        <div className="fixed top-4 left-4 z-50">
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="bg-white shadow-md hover:shadow-lg"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
+      )}
 
       {/* Hero Section */}
-      <section className="pt-32 pb-16 gradient-mesh">
+      <section className={`${isAuthenticated ? 'pt-24' : 'pt-32'} pb-16 gradient-mesh`}>
         <div className="max-w-7xl mx-auto px-6 text-center">
           <span className="inline-block px-4 py-1.5 bg-[#0a66c2]/10 text-[#0a66c2] text-sm font-medium rounded-full mb-4">
             Pricing
           </span>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-            Simple, transparent pricing
+            {isAuthenticated ? 'Upgrade Your Plan' : 'Simple, transparent pricing'}
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Start free and scale as you grow. All plans include 100% FREE AI generation powered by Google Gemini.
+            {isAuthenticated
+              ? `You're currently on the ${currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} plan. Choose a plan to unlock more features.`
+              : 'Start free and scale as you grow. All plans include 100% FREE AI generation powered by Google Gemini.'
+            }
           </p>
         </div>
       </section>
@@ -152,79 +256,94 @@ export default function PricingPage() {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 ${
-                  plan.popular ? 'ring-2 ring-[#0a66c2] scale-105' : ''
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#0a66c2] text-white text-sm font-semibold rounded-full">
-                    Most Popular
-                  </div>
-                )}
+            {plans.map((plan) => {
+              const isCurrentPlan = isAuthenticated && plan.id === currentPlan
+              const buttonText = getButtonText(plan.id)
+              const isDisabled = isCurrentPlan
 
-                <div className="p-6">
-                  {/* Plan Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center`}>
-                      <plan.icon className="w-6 h-6 text-white" />
+              return (
+                <div
+                  key={plan.id}
+                  className={`relative bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 ${
+                    plan.popular ? 'ring-2 ring-[#0a66c2] scale-105' : ''
+                  } ${isCurrentPlan ? 'ring-2 ring-green-500' : ''}`}
+                >
+                  {plan.popular && !isCurrentPlan && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#0a66c2] text-white text-sm font-semibold rounded-full">
+                      Most Popular
                     </div>
-                  </div>
+                  )}
 
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-gray-600 text-sm mb-6">{plan.description}</p>
-
-                  {/* Price */}
-                  <div className="mb-6">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                      {plan.period && <span className="text-gray-600">/{plan.period.split(' ')[1]}</span>}
+                  {isCurrentPlan && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-green-600 text-white text-sm font-semibold rounded-full flex items-center gap-1">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Current Plan
                     </div>
-                    {plan.comparison && (
-                      <p className="text-sm text-green-600 mt-1">{plan.comparison}</p>
-                    )}
-                  </div>
+                  )}
 
-                  {/* Posts & Accounts */}
-                  <div className="mb-6 space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">AI Posts</span>
-                      <span className="font-semibold text-gray-900">{plan.postsPerMonth}</span>
+                  <div className="p-6">
+                    {/* Plan Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center`}>
+                        <plan.icon className="w-6 h-6 text-white" />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">LinkedIn Accounts</span>
-                      <span className="font-semibold text-gray-900">{plan.linkedinAccounts}</span>
+
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                    <p className="text-gray-600 text-sm mb-6">{plan.description}</p>
+
+                    {/* Price */}
+                    <div className="mb-6">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
+                        {plan.period && <span className="text-gray-600">/{plan.period.split(' ')[1]}</span>}
+                      </div>
+                      {plan.comparison && (
+                        <p className="text-sm text-green-600 mt-1">{plan.comparison}</p>
+                      )}
                     </div>
-                  </div>
 
-                  {/* Features */}
-                  <ul className="space-y-3 mb-6">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+                    {/* Posts & Accounts */}
+                    <div className="mb-6 space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">AI Posts</span>
+                        <span className="font-semibold text-gray-900">{plan.postsPerMonth}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">LinkedIn Accounts</span>
+                        <span className="font-semibold text-gray-900">{plan.linkedinAccounts}</span>
+                      </div>
+                    </div>
 
-                  {/* CTA Button */}
-                  <Link href={plan.buttonLink} className="block">
+                    {/* Features */}
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <Check className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                          <span className="text-sm text-gray-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* CTA Button */}
                     <Button
                       size="lg"
+                      onClick={() => handlePlanSelection(plan.id)}
+                      disabled={isDisabled}
                       className={`w-full ${
-                        plan.popular
+                        isCurrentPlan
+                          ? 'bg-green-600 hover:bg-green-600 text-white cursor-default'
+                          : plan.popular
                           ? 'bg-[#0a66c2] hover:bg-[#004182] text-white'
                           : 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200'
                       }`}
                     >
-                      {plan.buttonText}
+                      {buttonText}
                     </Button>
-                  </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>
@@ -396,23 +515,26 @@ export default function PricingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-[#0a66c2] to-[#004182]">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to grow your LinkedIn presence?
-          </h2>
-          <p className="text-xl text-white/80 mb-8">
-            Join thousands of professionals using LinkedAI to save time and grow their audience.
-          </p>
-          <Link href="/signup">
-            <Button size="lg" className="bg-white text-[#0a66c2] hover:bg-gray-100">
-              Start Free - No Credit Card Required
-            </Button>
-          </Link>
-        </div>
-      </section>
+      {!isAuthenticated && (
+        <section className="py-20 bg-gradient-to-br from-[#0a66c2] to-[#004182]">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Ready to grow your LinkedIn presence?
+            </h2>
+            <p className="text-xl text-white/80 mb-8">
+              Join thousands of professionals using LinkedAI to save time and grow their audience.
+            </p>
+            <Link href="/signup">
+              <Button size="lg" className="bg-white text-[#0a66c2] hover:bg-gray-100">
+                Start Free - No Credit Card Required
+              </Button>
+            </Link>
+          </div>
+        </section>
+      )}
 
-      <Footer />
+      {/* Only show footer for non-authenticated users */}
+      {!isAuthenticated && <Footer />}
     </main>
   )
 }
