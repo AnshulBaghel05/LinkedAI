@@ -11,6 +11,7 @@ import LinkedInAccountsManager from '@/components/settings/linkedin-accounts-man
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const [subscription, setSubscription] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [fullName, setFullName] = useState('')
   const supabase = createClient()
@@ -32,6 +33,17 @@ export default function SettingsPage() {
 
         if (profileData) {
           setProfile(profileData)
+        }
+
+        // Fetch subscription and usage data
+        const { data: subscriptionData } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        if (subscriptionData) {
+          setSubscription(subscriptionData)
         }
       }
     }
@@ -258,35 +270,117 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Subscription */}
+            {/* Subscription & Usage */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-sm">
                     <CreditCard className="w-5 h-5 text-white" />
                   </div>
-                  <h2 className="text-lg font-semibold text-gray-900">Subscription</h2>
+                  <h2 className="text-lg font-semibold text-gray-900">Subscription & Usage</h2>
                 </div>
               </div>
 
-              <div className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="p-6 space-y-6">
+                {/* Plan Info */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b">
                   <div>
                     <p className="text-gray-700">
-                      Current Plan: <span className="font-bold text-gray-900">Free</span>
+                      Current Plan: <span className="font-bold text-gray-900 capitalize">{subscription?.plan || 'Free'}</span>
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">5 posts remaining this month</p>
-                    <div className="w-full bg-gray-100 rounded-full h-2 mt-3">
-                      <div className="bg-gradient-to-r from-[#0a66c2] to-blue-600 h-2 rounded-full" style={{ width: '50%' }}></div>
-                    </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {subscription?.plan === 'free' && 'Upgrade to unlock more features'}
+                      {subscription?.plan === 'pro' && 'Pro features unlocked'}
+                      {subscription?.plan === 'standard' && 'Standard features unlocked'}
+                    </p>
                   </div>
                   <button
                     onClick={() => router.push('/pricing')}
                     className="px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl font-medium transition-colors shadow-sm whitespace-nowrap"
                   >
-                    Upgrade Plan
+                    {subscription?.plan === 'free' ? 'Upgrade Plan' : 'Manage Plan'}
                   </button>
                 </div>
+
+                {/* AI Generation Usage */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">AI Post Generation</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {subscription?.ai_generations_used || 0}/{subscription?.ai_generations_limit || 5}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, ((subscription?.ai_generations_used || 0) / (subscription?.ai_generations_limit || 5)) * 100)}%`
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(subscription?.ai_generations_limit || 5) - (subscription?.ai_generations_used || 0)} generations remaining this month
+                  </p>
+                </div>
+
+                {/* Lead Discovery Usage */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">Lead Discovery</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {subscription?.leads_discovered_this_week || 0}/{
+                        subscription?.plan === 'free' ? 10 :
+                        subscription?.plan === 'pro' ? 125 :
+                        subscription?.plan === 'standard' ? 500 : 10
+                      }
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div
+                      className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, ((subscription?.leads_discovered_this_week || 0) / (
+                          subscription?.plan === 'free' ? 10 :
+                          subscription?.plan === 'pro' ? 125 :
+                          subscription?.plan === 'standard' ? 500 : 10
+                        )) * 100)}%`
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Resets {subscription?.leads_week_reset_at ? new Date(subscription.leads_week_reset_at).toLocaleDateString() : 'weekly'}
+                  </p>
+                </div>
+
+                {/* Viral Predictions Usage */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-gray-700">Viral Predictions</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      {subscription?.predictions_this_week || 0}/{subscription?.viral_predictions_limit || 3}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div
+                      className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, ((subscription?.predictions_this_week || 0) / (subscription?.viral_predictions_limit || 3)) * 100)}%`
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(subscription?.viral_predictions_limit || 3) - (subscription?.predictions_this_week || 0)} predictions remaining this week
+                  </p>
+                </div>
+
+                {/* Reset Date Info */}
+                {subscription?.ai_generations_reset_at && (
+                  <div className="pt-4 border-t">
+                    <p className="text-xs text-gray-600">
+                      Monthly limits reset on {new Date(subscription.ai_generations_reset_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

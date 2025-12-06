@@ -149,13 +149,30 @@ export async function canCreatePost(userId: string): Promise<{ allowed: boolean;
 }
 
 export async function canGenerateAI(userId: string): Promise<{ allowed: boolean; reason?: string }> {
-  const result = await checkLimit(userId, 'aiGenerationsThisMonth')
+  const supabase = await createClient()
 
-  if (!result.allowed) {
-    const plan = await getUserPlan(userId)
+  // Get subscription limits
+  const { data: subscription } = await supabase
+    .from('subscriptions')
+    .select('plan, ai_generations_limit, ai_generations_used')
+    .eq('user_id', userId)
+    .single()
+
+  if (!subscription) {
     return {
       allowed: false,
-      reason: `You've reached your monthly limit of ${result.limit} AI generations on the ${plan} plan. Upgrade for more.`,
+      reason: 'Subscription not found. Please contact support.',
+    }
+  }
+
+  const limit = subscription.ai_generations_limit || 5
+  const used = subscription.ai_generations_used || 0
+  const remaining = limit - used
+
+  if (remaining <= 0) {
+    return {
+      allowed: false,
+      reason: `You've reached your monthly limit of ${limit} AI generations on the ${subscription.plan} plan. Upgrade for more.`,
     }
   }
 

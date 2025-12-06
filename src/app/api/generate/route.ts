@@ -108,55 +108,31 @@ export async function POST(request: NextRequest) {
     // Deduct posts from remaining count
     const postsGenerated = finalPosts.length
 
-    // Use admin client to ensure profile exists and update posts tracking (bypasses RLS)
+    // Use admin client to update subscription usage (bypasses RLS)
     const adminClient = createAdminClient()
 
-    const { data: profile } = await adminClient
-      .from('profiles')
-      .select('id, posts_remaining, posts_limit, posts_used')
-      .eq('id', user.id)
-      .maybeSingle()
+    // Get current usage and increment
+    const { data: subscription } = await adminClient
+      .from('subscriptions')
+      .select('ai_generations_used')
+      .eq('user_id', user.id)
+      .single()
 
-    if (!profile) {
-      // Create profile with default post limits using admin client (bypasses RLS)
-      const { error: profileError } = await adminClient.from('profiles').insert({
-        id: user.id,
-        email: user.email,
-        subscription_plan: 'free',
-        posts_remaining: Math.max(0, 5 - postsGenerated), // Free plan starts with 5 posts
-        posts_limit: 5,
-        posts_used: postsGenerated,
-        linkedin_connected: false,
-        google_calendar_enabled: false,
+    const newUsage = (subscription?.ai_generations_used || 0) + postsGenerated
+
+    const { error: updateError } = await adminClient
+      .from('subscriptions')
+      .update({
+        ai_generations_used: newUsage
       })
+      .eq('user_id', user.id)
 
-      if (profileError) {
-        console.error('Error creating profile:', profileError)
-        return NextResponse.json(
-          { error: `Failed to create user profile: ${profileError.message}` },
-          { status: 500 }
-        )
-      }
-    } else {
-      // Deduct generated posts from remaining using admin client
-      const newPostsRemaining = Math.max(0, (profile.posts_remaining || 5) - postsGenerated)
-      const newPostsUsed = (profile.posts_used || 0) + postsGenerated
-
-      const { error: updateError } = await adminClient
-        .from('profiles')
-        .update({
-          posts_remaining: newPostsRemaining,
-          posts_used: newPostsUsed
-        })
-        .eq('id', user.id)
-
-      if (updateError) {
-        console.error('Error updating profile:', updateError)
-        return NextResponse.json(
-          { error: `Failed to update posts tracking: ${updateError.message}` },
-          { status: 500 }
-        )
-      }
+    if (updateError) {
+      console.error('Error updating subscription usage:', updateError)
+      return NextResponse.json(
+        { error: `Failed to update usage tracking: ${updateError.message}` },
+        { status: 500 }
+      )
     }
 
     // Log activity

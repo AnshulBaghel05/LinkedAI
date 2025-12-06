@@ -78,14 +78,15 @@ export default function GeneratePage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('posts_remaining')
-        .eq('id', user.id)
+      const { data: subscription } = await supabase
+        .from('subscriptions')
+        .select('ai_generations_limit, ai_generations_used')
+        .eq('user_id', user.id)
         .single()
 
-      if (profile) {
-        setPostsRemaining(profile.posts_remaining || 5)
+      if (subscription) {
+        const remaining = (subscription.ai_generations_limit || 5) - (subscription.ai_generations_used || 0)
+        setPostsRemaining(Math.max(0, remaining))
       }
     }
   }
