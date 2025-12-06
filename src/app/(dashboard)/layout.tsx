@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { Linkedin, LayoutDashboard, Wand2, Calendar, FileText, Clock, Settings, LogOut, Menu, X, Sparkles, LifeBuoy, BarChart3, Building2, Bell, Zap, Key, TrendingUp, TestTube2, Lock } from 'lucide-react'
+import { Linkedin, LayoutDashboard, Wand2, Calendar, FileText, Clock, Settings, LogOut, Menu, X, Sparkles, LifeBuoy, BarChart3, Building2, Bell, Zap, Key, TrendingUp, TestTube2, Lock, Users, Target, Eye, MessageSquare, Lightbulb, LineChart } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import WorkspaceSwitcher from '@/components/workspaces/workspace-switcher'
 import NotificationBell from '@/components/notifications/notification-bell'
@@ -23,11 +23,21 @@ const navItems = [
   { href: '/calendar', icon: Calendar, label: 'Calendar', requiresPlan: false },
   { href: '/scheduled', icon: Clock, label: 'Scheduled', requiresPlan: false },
   { href: '/analytics', icon: BarChart3, label: 'Analytics', badge: 'Pro', requiresPlan: true },
-  { href: '/best-time', icon: TrendingUp, label: 'Best Time', badge: 'Pro', requiresPlan: true },
+  { href: '/best-time', icon: TrendingUp, label: 'Best Time', requiresPlan: false },
   { href: '/ab-tests', icon: TestTube2, label: 'A/B Tests', badge: 'Pro', requiresPlan: true },
+  // NEW UNIQUE FEATURES
+  { href: '/leads', icon: Users, label: 'Lead Generation', badge: 'New', requiresPlan: false },
+  { href: '/viral-score', icon: Target, label: 'Viral Predictor', badge: 'New', requiresPlan: false },
+  { href: '/audience-growth', icon: LineChart, label: 'Audience Growth', requiresPlan: false },
+  { href: '/competitors', icon: Eye, label: 'Competitors', badge: 'Pro', requiresPlan: true },
+  { href: '/trending', icon: Zap, label: 'Trending Topics', requiresPlan: false },
+  { href: '/content-ideas', icon: Lightbulb, label: 'Content Ideas', requiresPlan: false },
+  { href: '/top-engagers', icon: MessageSquare, label: 'Top Engagers', badge: 'Pro', requiresPlan: true },
+  // ENTERPRISE FEATURES
   { href: '/workspaces', icon: Building2, label: 'Workspaces', badge: 'Enterprise', requiresPlan: true },
-  { href: '/notifications', icon: Bell, label: 'Notifications', requiresPlan: false },
   { href: '/api-docs', icon: Key, label: 'API Docs', badge: 'Enterprise', requiresPlan: true },
+  // SETTINGS & SUPPORT
+  { href: '/notifications', icon: Bell, label: 'Notifications', requiresPlan: false },
   { href: '/settings', icon: Settings, label: 'Settings', requiresPlan: false },
   { href: '/support', icon: LifeBuoy, label: 'Support', requiresPlan: false },
 ]
@@ -134,6 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       px-2 py-0.5 text-xs font-semibold rounded-full
                       ${item.badge === 'Pro' ? 'bg-purple-100 text-purple-700' : ''}
                       ${item.badge === 'Enterprise' ? 'bg-blue-100 text-blue-700' : ''}
+                      ${item.badge === 'New' ? 'bg-green-100 text-green-700' : ''}
                     `}>
                       {item.badge}
                     </span>
