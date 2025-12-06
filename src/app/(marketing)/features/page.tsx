@@ -348,7 +348,344 @@ function FeatureMockup({ type }: { type: string }) {
     )
   }
 
-  // Add other existing mockups similarly...
+  if (type === 'scheduling') {
+    return (
+      <div ref={mockupRef} className="bg-white rounded-xl shadow-lg p-5 border border-gray-200 transform-gpu">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-medium text-gray-900">Content Calendar</span>
+          <Calendar className="w-5 h-5 text-gray-400" />
+        </div>
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+            <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">{day}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: 35 }).map((_, i) => {
+            const hasPost = [2, 5, 9, 12, 16, 19, 23, 26, 30].includes(i)
+            const isScheduled = [5, 12, 19, 26].includes(i)
+            const isPublished = [2, 9, 16, 23].includes(i)
+            const isBestTime = [12, 26].includes(i)
+            return (
+              <div
+                key={i}
+                className={`aspect-square rounded flex items-center justify-center text-xs relative ${
+                  i < 5 ? 'text-gray-300' :
+                  hasPost ? (isScheduled ? 'bg-blue-500 text-white' : 'bg-green-500 text-white') :
+                  'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {i >= 5 && i - 4}
+                {isBestTime && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <span className="text-[8px]">⭐</span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+        <div className="mt-4 flex items-center gap-3 text-xs">
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-green-500" />
+            <span className="text-gray-600">Published</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded bg-blue-500" />
+            <span className="text-gray-600">Scheduled</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-yellow-500">⭐</span>
+            <span className="text-gray-600">Best time</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (type === 'editor') {
+    return (
+      <div ref={mockupRef} className="bg-white rounded-xl shadow-lg p-5 border border-gray-200 transform-gpu">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-medium text-gray-900">Post Editor</span>
+          <Edit className="w-5 h-5 text-gray-400" />
+        </div>
+        <div className="mb-4 flex gap-2 pb-3 border-b border-gray-200">
+          <button className="p-1.5 hover:bg-gray-100 rounded">
+            <span className="text-sm font-bold">B</span>
+          </button>
+          <button className="p-1.5 hover:bg-gray-100 rounded">
+            <span className="text-sm italic">I</span>
+          </button>
+          <button className="p-1.5 hover:bg-gray-100 rounded">
+            <Hash className="w-4 h-4" />
+          </button>
+          <button className="p-1.5 hover:bg-gray-100 rounded">
+            <Sparkles className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="bg-gray-50 rounded-lg p-3 mb-3 min-h-[120px]">
+          <p className="text-sm text-gray-700 leading-relaxed">
+            <span className="font-semibold">🚀 Just launched our new product!</span>
+            <br /><br />
+            After months of hard work, we're excited to share this with the world.
+            <br /><br />
+            <span className="text-[#0a66c2]">#ProductLaunch #Innovation #StartupLife</span>
+          </p>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-500">156 characters</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <Target className="w-3 h-3 text-green-600" />
+              <span className="text-green-600 font-medium">92% score</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (type === 'competitors') {
+    return (
+      <div ref={mockupRef} className="bg-white rounded-xl shadow-lg p-5 border border-gray-200 transform-gpu">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-medium text-gray-900">Competitor Tracking</span>
+          <Eye className="w-5 h-5 text-gray-400" />
+        </div>
+        <div className="space-y-3">
+          {[
+            { name: 'CompetitorA', posts: 12, engagement: '+24%', trend: 'up', color: 'red' },
+            { name: 'CompetitorB', posts: 8, engagement: '-5%', trend: 'down', color: 'orange' },
+            { name: 'CompetitorC', posts: 15, engagement: '+18%', trend: 'up', color: 'blue' },
+          ].map((comp, i) => (
+            <div key={i} className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-full bg-${comp.color}-100 flex items-center justify-center`}>
+                    <span className="text-xs font-bold">{comp.name[0]}</span>
+                  </div>
+                  <span className="text-sm font-medium text-gray-900">{comp.name}</span>
+                </div>
+                <div className={`text-xs font-medium ${comp.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                  {comp.trend === 'up' ? '↑' : '↓'} {comp.engagement}
+                </div>
+              </div>
+              <div className="flex items-center gap-4 text-xs text-gray-600">
+                <span>{comp.posts} posts this week</span>
+                <span>•</span>
+                <span className="text-gray-500">Avg. 1.2K views</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 p-3 bg-purple-50 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-purple-600" />
+            <span className="text-sm text-gray-700">You're posting <span className="font-medium text-purple-600">2x more</span> than competitors</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (type === 'top-engagers') {
+    return (
+      <div ref={mockupRef} className="bg-white rounded-xl shadow-lg p-5 border border-gray-200 transform-gpu">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-medium text-gray-900">Top Engagers</span>
+          <MessageSquare className="w-5 h-5 text-gray-400" />
+        </div>
+        <div className="space-y-2">
+          {[
+            { name: 'Alex Rivera', interactions: 47, avatar: 'AR', sentiment: 'positive' },
+            { name: 'Jordan Lee', interactions: 42, avatar: 'JL', sentiment: 'positive' },
+            { name: 'Sam Taylor', interactions: 38, avatar: 'ST', sentiment: 'neutral' },
+            { name: 'Casey Morgan', interactions: 35, avatar: 'CM', sentiment: 'positive' },
+            { name: 'Riley Chen', interactions: 31, avatar: 'RC', sentiment: 'positive' },
+          ].map((engager, i) => (
+            <div key={i} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
+              <div className="flex items-center gap-1">
+                <span className="text-lg font-bold text-gray-400">#{i + 1}</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-medium">
+                {engager.avatar}
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-gray-900">{engager.name}</div>
+                <div className="text-xs text-gray-500">{engager.interactions} interactions</div>
+              </div>
+              <div className="flex gap-1">
+                {engager.sentiment === 'positive' && <span className="text-sm">💚</span>}
+                {engager.sentiment === 'neutral' && <span className="text-sm">💛</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 pt-3 border-t border-gray-200">
+          <button className="w-full py-2 bg-[#0a66c2] text-white rounded-lg text-sm font-medium hover:bg-[#004182] transition-colors">
+            Generate AI Reply
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (type === 'post-insights') {
+    return (
+      <div ref={mockupRef} className="bg-white rounded-xl shadow-lg p-5 border border-gray-200 transform-gpu">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-medium text-gray-900">Post Autopsy</span>
+          <Brain className="w-5 h-5 text-gray-400" />
+        </div>
+        <div className="space-y-3">
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <div className="text-sm font-medium text-green-900 mb-1">Strong Hook</div>
+                <div className="text-xs text-green-700">Your opening question captured attention immediately (+40% CTR)</div>
+              </div>
+            </div>
+          </div>
+          <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <div className="text-sm font-medium text-green-900 mb-1">Perfect Timing</div>
+                <div className="text-xs text-green-700">Posted at peak audience activity (Wed 12PM)</div>
+              </div>
+            </div>
+          </div>
+          <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+            <div className="flex items-start gap-2">
+              <Lightbulb className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <div className="text-sm font-medium text-yellow-900 mb-1">Improvement Area</div>
+                <div className="text-xs text-yellow-700">Add more line breaks for readability (+15% engagement)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-700">Overall Score</span>
+            <span className="font-bold text-blue-600">8.7/10</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (type === 'content-ideas') {
+    return (
+      <div ref={mockupRef} className="bg-white rounded-xl shadow-lg p-5 border border-gray-200 transform-gpu">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-medium text-gray-900">AI Content Ideas</span>
+          <Lightbulb className="w-5 h-5 text-gray-400" />
+        </div>
+        <div className="space-y-2">
+          {[
+            { topic: 'How AI is transforming B2B sales in 2025', score: 94, trend: 'hot' },
+            { topic: 'My biggest leadership lesson from failure', score: 89, trend: 'rising' },
+            { topic: '5 mistakes I see SaaS founders make', score: 87, trend: 'hot' },
+            { topic: 'Why we switched to async communication', score: 82, trend: 'steady' },
+            { topic: 'Remote work tips from 3 years experience', score: 78, trend: 'rising' },
+          ].map((idea, i) => (
+            <div key={i} className="p-3 bg-gray-50 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer group">
+              <div className="flex items-start gap-2 mb-1">
+                <div className="flex-1">
+                  <div className="text-sm text-gray-900 font-medium mb-1">{idea.topic}</div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <Target className="w-3 h-3 text-purple-600" />
+                      <span className="text-purple-600 font-medium">{idea.score}% viral</span>
+                    </div>
+                    {idea.trend === 'hot' && (
+                      <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full text-[10px] font-medium">🔥 Hot</span>
+                    )}
+                    {idea.trend === 'rising' && (
+                      <span className="px-1.5 py-0.5 bg-green-100 text-green-600 rounded-full text-[10px] font-medium">↗ Rising</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 text-center">
+          <button className="text-sm text-[#0a66c2] hover:underline font-medium">
+            Generate post from idea →
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (type === 'analytics') {
+    return (
+      <div ref={mockupRef} className="bg-white rounded-xl shadow-lg p-5 border border-gray-200 transform-gpu">
+        <div className="flex items-center justify-between mb-4">
+          <span className="font-medium text-gray-900">Analytics Dashboard</span>
+          <BarChart className="w-5 h-5 text-gray-400" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <Eye className="w-4 h-4 text-blue-600" />
+              <span className="text-xs text-gray-600">Views</span>
+            </div>
+            <div className="text-xl font-bold text-gray-900">24.5K</div>
+            <div className="text-xs text-green-600">+18% vs last week</div>
+          </div>
+          <div className="p-3 bg-purple-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <MessageSquare className="w-4 h-4 text-purple-600" />
+              <span className="text-xs text-gray-600">Engagement</span>
+            </div>
+            <div className="text-xl font-bold text-gray-900">3.8%</div>
+            <div className="text-xs text-green-600">+0.4% vs avg</div>
+          </div>
+        </div>
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2 text-xs">
+            <span className="text-gray-600">Performance by type</span>
+          </div>
+          <div className="space-y-2">
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-gray-700">Thought Leadership</span>
+                <span className="font-medium text-gray-900">4.2%</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full w-[84%]" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-gray-700">How-to Guide</span>
+                <span className="font-medium text-gray-900">3.9%</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-purple-500 rounded-full w-[78%]" />
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-gray-700">Personal Story</span>
+                <span className="font-medium text-gray-900">3.5%</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-green-500 rounded-full w-[70%]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Fallback for any missing mockups
   return <div ref={mockupRef} className="bg-white rounded-xl shadow-lg p-5 border border-gray-200 transform-gpu h-64 flex items-center justify-center text-gray-400">Mockup: {type}</div>
 }
 
