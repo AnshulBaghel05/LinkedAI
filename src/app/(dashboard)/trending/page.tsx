@@ -9,10 +9,27 @@ export default function TrendingTopicsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [trendingTopics, setTrendingTopics] = useState<any[]>([])
+  const [topHashtags, setTopHashtags] = useState<any[]>([])
   const supabase = createClient()
 
+  const loadTrendingData = async () => {
+    try {
+      const response = await fetch('/api/trending-topics')
+      if (response.ok) {
+        const data = await response.json()
+        setTrendingTopics(data.topics || [])
+        setTopHashtags(data.hashtags || [])
+      }
+    } catch (error) {
+      console.error('Error loading trending data:', error)
+      setTrendingTopics([])
+      setTopHashtags([])
+    }
+  }
+
   useEffect(() => {
-    const getProfile = async () => {
+    const initData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
@@ -26,89 +43,19 @@ export default function TrendingTopicsPage() {
           setProfile(profileData)
         }
       }
+
+      await loadTrendingData()
       setLoading(false)
     }
 
-    getProfile()
+    initData()
   }, [])
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    await loadTrendingData()
     setRefreshing(false)
   }
-
-  // Mock trending topics
-  const trendingTopics = [
-    {
-      id: 1,
-      topic: 'Artificial Intelligence',
-      hashtag: '#AI',
-      mentions: 45678,
-      growth: 23.5,
-      category: 'Technology',
-      timeframe: '24h',
-      color: 'from-blue-500 to-purple-500',
-    },
-    {
-      id: 2,
-      topic: 'Remote Work',
-      hashtag: '#RemoteWork',
-      mentions: 34512,
-      growth: 18.2,
-      category: 'Business',
-      timeframe: '24h',
-      color: 'from-green-500 to-teal-500',
-    },
-    {
-      id: 3,
-      topic: 'Sustainability',
-      hashtag: '#Sustainability',
-      mentions: 28934,
-      growth: 15.8,
-      category: 'Environment',
-      timeframe: '24h',
-      color: 'from-emerald-500 to-green-500',
-    },
-    {
-      id: 4,
-      topic: 'Career Growth',
-      hashtag: '#CareerGrowth',
-      mentions: 23456,
-      growth: 12.4,
-      category: 'Professional Development',
-      timeframe: '24h',
-      color: 'from-orange-500 to-red-500',
-    },
-    {
-      id: 5,
-      topic: 'Leadership',
-      hashtag: '#Leadership',
-      mentions: 19876,
-      growth: 10.2,
-      category: 'Management',
-      timeframe: '24h',
-      color: 'from-purple-500 to-pink-500',
-    },
-    {
-      id: 6,
-      topic: 'Digital Marketing',
-      hashtag: '#DigitalMarketing',
-      mentions: 17654,
-      growth: 9.8,
-      category: 'Marketing',
-      timeframe: '24h',
-      color: 'from-pink-500 to-rose-500',
-    },
-  ]
-
-  const topHashtags = [
-    { tag: '#Innovation', posts: 156789 },
-    { tag: '#Tech', posts: 145632 },
-    { tag: '#Business', posts: 134521 },
-    { tag: '#Marketing', posts: 123456 },
-    { tag: '#Growth', posts: 112345 },
-  ]
 
   if (loading) {
     return (
@@ -190,11 +137,11 @@ export default function TrendingTopicsPage() {
                 <div className="flex items-center gap-6 text-sm text-gray-600">
                   <div className="flex items-center gap-2">
                     <Eye className="w-4 h-4" />
-                    <span>{topic.mentions.toLocaleString()} mentions</span>
+                    <span>{topic.mentions?.toLocaleString() || 0} mentions</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    <span>Last {topic.timeframe}</span>
+                    <span>Last {topic.timeframe || '24h'}</span>
                   </div>
                 </div>
               </div>
@@ -210,8 +157,8 @@ export default function TrendingTopicsPage() {
                 Top Hashtags
               </h3>
               <div className="space-y-3">
-                {topHashtags.map((hashtag, index) => (
-                  <div key={hashtag.tag} className="flex items-center justify-between">
+                {topHashtags.length > 0 ? topHashtags.map((hashtag, index) => (
+                  <div key={hashtag.tag || index} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold text-gray-400 w-4">
                         {index + 1}
@@ -219,10 +166,12 @@ export default function TrendingTopicsPage() {
                       <span className="font-medium text-gray-900">{hashtag.tag}</span>
                     </div>
                     <span className="text-sm text-gray-600">
-                      {(hashtag.posts / 1000).toFixed(0)}k
+                      {((hashtag.posts || 0) / 1000).toFixed(0)}k
                     </span>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-sm text-gray-500 text-center py-4">No hashtags available</p>
+                )}
               </div>
             </div>
 

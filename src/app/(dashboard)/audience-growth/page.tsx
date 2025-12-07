@@ -7,10 +7,13 @@ import { LineChart, Users, TrendingUp, TrendingDown, Calendar, ArrowUp, ArrowDow
 export default function AudienceGrowthPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<any>(null)
+  const [weeklyData, setWeeklyData] = useState<any[]>([])
+  const [insights, setInsights] = useState<any[]>([])
   const supabase = createClient()
 
   useEffect(() => {
-    const getProfile = async () => {
+    const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
@@ -23,57 +26,39 @@ export default function AudienceGrowthPage() {
         if (profileData) {
           setProfile(profileData)
         }
+
+        // Fetch real growth data from API
+        try {
+          const response = await fetch('/api/analytics/growth')
+          if (response.ok) {
+            const data = await response.json()
+            setStats(data.stats || {
+              totalFollowers: 0,
+              weeklyGrowth: 0,
+              growthRate: 0,
+              avgEngagement: 0,
+            })
+            setWeeklyData(data.weeklyData || [])
+            setInsights(data.insights || [])
+          }
+        } catch (error) {
+          console.error('Error loading growth data:', error)
+          // Set empty state if API fails
+          setStats({
+            totalFollowers: 0,
+            weeklyGrowth: 0,
+            growthRate: 0,
+            avgEngagement: 0,
+          })
+          setWeeklyData([])
+          setInsights([])
+        }
       }
       setLoading(false)
     }
 
-    getProfile()
+    loadData()
   }, [])
-
-  // Mock data for demonstration
-  const stats = {
-    totalFollowers: 2847,
-    weeklyGrowth: 127,
-    growthRate: 4.7,
-    avgEngagement: 3.2,
-  }
-
-  const weeklyData = [
-    { day: 'Mon', followers: 2720 },
-    { day: 'Tue', followers: 2745 },
-    { day: 'Wed', followers: 2765 },
-    { day: 'Thu', followers: 2790 },
-    { day: 'Fri', followers: 2815 },
-    { day: 'Sat', followers: 2830 },
-    { day: 'Sun', followers: 2847 },
-  ]
-
-  const insights = [
-    {
-      title: 'Peak Growth Day',
-      value: 'Thursday',
-      change: '+45 followers',
-      icon: TrendingUp,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-    },
-    {
-      title: 'Best Performing Post',
-      value: 'AI in Marketing',
-      change: '+89 followers',
-      icon: Users,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-    },
-    {
-      title: 'Engagement Rate',
-      value: '3.2%',
-      change: '+0.5% from last week',
-      icon: TrendingUp,
-      color: 'text-purple-600',
-      bg: 'bg-purple-50',
-    },
-  ]
 
   if (loading) {
     return (
@@ -117,11 +102,11 @@ export default function AudienceGrowthPage() {
               <Users className="w-5 h-5 text-gray-400" />
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stats.totalFollowers.toLocaleString()}
+              {stats?.totalFollowers?.toLocaleString() || 0}
             </div>
             <div className="flex items-center gap-1 text-sm text-green-600">
               <ArrowUp className="w-4 h-4" />
-              <span>{stats.weeklyGrowth} this week</span>
+              <span>{stats?.weeklyGrowth || 0} this week</span>
             </div>
           </div>
 
@@ -131,7 +116,7 @@ export default function AudienceGrowthPage() {
               <TrendingUp className="w-5 h-5 text-gray-400" />
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stats.growthRate}%
+              {stats?.growthRate || 0}%
             </div>
             <div className="flex items-center gap-1 text-sm text-green-600">
               <ArrowUp className="w-4 h-4" />
@@ -145,7 +130,7 @@ export default function AudienceGrowthPage() {
               <Calendar className="w-5 h-5 text-gray-400" />
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-1">
-              +{stats.weeklyGrowth}
+              +{stats?.weeklyGrowth || 0}
             </div>
             <div className="text-sm text-gray-600">Last 7 days</div>
           </div>
@@ -156,7 +141,7 @@ export default function AudienceGrowthPage() {
               <TrendingUp className="w-5 h-5 text-gray-400" />
             </div>
             <div className="text-3xl font-bold text-gray-900 mb-1">
-              {stats.avgEngagement}%
+              {stats?.avgEngagement || 0}%
             </div>
             <div className="flex items-center gap-1 text-sm text-green-600">
               <ArrowUp className="w-4 h-4" />
@@ -167,24 +152,49 @@ export default function AudienceGrowthPage() {
 
         {/* Growth Chart */}
         <div className="bg-white rounded-xl p-6 border border-gray-200 mb-8">
-          <h3 className="font-semibold text-gray-900 mb-6">7-Day Growth Trend</h3>
-          <div className="h-64 flex items-end justify-between gap-4">
-            {weeklyData.map((data, index) => {
-              const height = ((data.followers - 2700) / (2847 - 2700)) * 100
-              return (
-                <div key={data.day} className="flex-1 flex flex-col items-center">
-                  <div className="w-full bg-gray-100 rounded-t-lg relative" style={{ height: '100%' }}>
-                    <div
-                      className="w-full bg-gradient-to-t from-blue-500 to-purple-500 rounded-t-lg absolute bottom-0 transition-all duration-500"
-                      style={{ height: `${height}%` }}
-                    />
-                  </div>
-                  <div className="mt-2 text-sm font-medium text-gray-600">{data.day}</div>
-                  <div className="text-xs text-gray-500">{data.followers}</div>
-                </div>
-              )
-            })}
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-semibold text-gray-900">7-Day Growth Trend</h3>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-gradient-to-r from-blue-500 to-purple-500"></div>
+                <span className="text-sm text-gray-600">Followers</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-gray-100"></div>
+                <span className="text-sm text-gray-600">Baseline</span>
+              </div>
+            </div>
           </div>
+          {weeklyData.length > 0 ? (
+            <div className="h-64 flex items-end justify-between gap-4">
+              {weeklyData.map((data, index) => {
+                const minFollowers = Math.min(...weeklyData.map(d => d.followers))
+                const maxFollowers = Math.max(...weeklyData.map(d => d.followers))
+                const range = maxFollowers - minFollowers || 1
+                const height = ((data.followers - minFollowers) / range) * 100
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center">
+                    <div className="w-full bg-gray-100 rounded-t-lg relative" style={{ height: '100%' }}>
+                      <div
+                        className="w-full bg-gradient-to-t from-blue-500 to-purple-500 rounded-t-lg absolute bottom-0 transition-all duration-500"
+                        style={{ height: `${height}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 text-sm font-medium text-gray-600">{data.day}</div>
+                    <div className="text-xs text-gray-500">{data.followers?.toLocaleString() || 0}</div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-500">
+              <div className="text-center">
+                <LineChart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No growth data available yet</p>
+                <p className="text-sm">Connect your LinkedIn account to start tracking</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Insights */}

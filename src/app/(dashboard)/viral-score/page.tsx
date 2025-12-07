@@ -41,32 +41,42 @@ export default function ViralScorePage() {
 
     setAnalyzing(true)
 
-    // Simulate AI analysis
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    try {
+      // Call API to analyze viral potential using AI
+      const response = await fetch('/api/posts/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: postContent }),
+      })
 
-    // Generate mock viral score
-    const score = Math.floor(Math.random() * 40) + 60 // 60-100
-    setViralScore({
-      score,
-      factors: {
-        engagement: Math.floor(Math.random() * 30) + 70,
-        timing: Math.floor(Math.random() * 30) + 70,
-        relevance: Math.floor(Math.random() * 30) + 70,
-        emotion: Math.floor(Math.random() * 30) + 70,
-      },
-      predictions: {
-        likes: Math.floor(Math.random() * 500) + 100,
-        comments: Math.floor(Math.random() * 50) + 20,
-        shares: Math.floor(Math.random() * 30) + 10,
-        reach: Math.floor(Math.random() * 5000) + 1000,
-      },
-      suggestions: [
-        'Add a compelling hook in the first line',
-        'Include a question to boost engagement',
-        'Use 3-5 relevant hashtags',
-        'Post during peak hours (9-11 AM)',
-      ],
-    })
+      if (!response.ok) {
+        throw new Error('Failed to analyze post')
+      }
+
+      const data = await response.json()
+      setViralScore(data)
+    } catch (error) {
+      console.error('Error analyzing viral potential:', error)
+      // Fallback to basic analysis if API fails
+      setViralScore({
+        score: 0,
+        factors: {
+          engagement: 0,
+          timing: 0,
+          relevance: 0,
+          emotion: 0,
+        },
+        predictions: {
+          likes: 0,
+          comments: 0,
+          shares: 0,
+          reach: 0,
+        },
+        suggestions: [
+          'Unable to analyze post. Please try again.',
+        ],
+      })
+    }
 
     setAnalyzing(false)
   }

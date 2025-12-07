@@ -4,6 +4,21 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
 
+// Admin client for subscription management (bypasses RLS)
+async function getAdminClient() {
+  const { createClient } = await import('@supabase/supabase-js')
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  )
+}
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient()
@@ -13,15 +28,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check subscription limits
-    const { data: subscription } = await supabase
+    // Check subscription limits - create default if not exists
+    let { data: subscription } = await supabase
       .from('subscriptions')
       .select('plan, content_ideas_limit')
       .eq('user_id', user.id)
       .single()
 
+    // If no subscription exists, create a free plan subscription using admin client
     if (!subscription) {
-      return NextResponse.json({ error: 'No subscription found' }, { status: 403 })
+      try {
+        const adminClient = await getAdminClient()
+        const { data: newSubscription, error: createError } = await adminClient
+          .from('subscriptions')
+          .insert({
+            user_id: user.id,
+            plan: 'free',
+            status: 'active',
+            content_ideas_limit: 5
+          })
+          .select('plan, content_ideas_limit')
+          .single()
+
+        if (createError) {
+          console.error('Error creating subscription:', createError)
+          // Continue anyway with default free plan
+          subscription = { plan: 'free', content_ideas_limit: 5 }
+        } else {
+          subscription = newSubscription
+        }
+      } catch (adminError) {
+        console.error('Admin client error:', adminError)
+        // Continue anyway with default free plan
+        subscription = { plan: 'free', content_ideas_limit: 5 }
+      }
     }
 
     // Get user's profile and posting history
@@ -62,10 +102,13 @@ export async function POST(request: Request) {
       .order('likes', { ascending: false })
       .limit(3)
 
-    // Generate content ideas using AI
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    // Generate content ideas using AI or fallback
+    let generatedIdeas
 
-    const ideaPrompt = `You are a LinkedIn content strategist. Generate 5 personalized content ideas.
+    try {
+      const model = genAI.getGenerativeModel({ model: process.env.GEMINI_MODEL || 'gemini-2.5-flash' })
+
+      const ideaPrompt = `You are a LinkedIn content strategist. Generate 5 personalized content ideas.
 
 User Profile:
 - Name: ${profile?.full_name || 'Unknown'}
@@ -101,16 +144,73 @@ Provide response in this EXACT JSON format (no markdown):
   ]
 }`
 
-    const result = await model.generateContent(ideaPrompt)
-    const response = result.response.text()
+      const result = await model.generateContent(ideaPrompt)
+      const response = result.response.text()
 
-    let generatedIdeas
-    try {
-      const cleanedResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-      generatedIdeas = JSON.parse(cleanedResponse)
-    } catch (parseError) {
-      console.error('Failed to parse AI ideas:', response)
-      throw new Error('Invalid AI response format')
+      try {
+        const cleanedResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+        generatedIdeas = JSON.parse(cleanedResponse)
+      } catch (parseError) {
+        console.error('Failed to parse AI ideas:', response)
+        throw new Error('Invalid AI response format')
+      }
+    } catch (aiError) {
+      console.error('AI generation failed, using fallback:', aiError)
+      // Fallback to template-based ideas when AI fails
+      generatedIdeas = {
+        ideas: [
+          {
+            title: "Share Your Biggest Lesson from This Week",
+            description: "Reflect on a key takeaway or insight you gained recently. Share what you learned and how it changed your perspective on your work or industry.",
+            content_type: "story",
+            reasoning: "Personal stories with lessons learned tend to generate high engagement",
+            suggested_hooks: ["This week taught me something powerful...", "I made a mistake that turned into my biggest lesson", "Here's what I learned the hard way"],
+            relevant_hashtags: ["#LessonsLearned", "#GrowthMindset", "#CareerDevelopment"],
+            predicted_virality_score: 75,
+            trending_topic_id: null
+          },
+          {
+            title: "5 Quick Tips to Boost Your Productivity",
+            description: "Share actionable productivity hacks that have helped you get more done. Focus on simple, implementable strategies your network can use immediately.",
+            content_type: "tips",
+            reasoning: "List-based content performs well and provides immediate value",
+            suggested_hooks: ["Want to get 10x more done? Try these", "These 5 hacks changed my work life", "Stop wasting time - do this instead"],
+            relevant_hashtags: ["#Productivity", "#WorkSmart", "#TimeManagement"],
+            predicted_virality_score: 80,
+            trending_topic_id: null
+          },
+          {
+            title: "Ask Your Network for Their Best Advice",
+            description: "Pose a thoughtful question to your network about a challenge you're facing or topic you're exploring. Encourage discussion and engagement.",
+            content_type: "question",
+            reasoning: "Questions drive comments and create conversation",
+            suggested_hooks: ["I need your help with something...", "Question for my network:", "What's your take on this?"],
+            relevant_hashtags: ["#AskLinkedIn", "#CommunityWisdom", "#Collaboration"],
+            predicted_virality_score: 70,
+            trending_topic_id: null
+          },
+          {
+            title: "Behind the Scenes of Your Daily Work",
+            description: "Give your audience a peek into your daily routine, workflow, or a recent project. Show the human side of your professional life.",
+            content_type: "story",
+            reasoning: "Authentic behind-the-scenes content builds connection",
+            suggested_hooks: ["Here's what my day actually looks like", "Nobody talks about this part of the job", "A day in the life as a [your role]"],
+            relevant_hashtags: ["#DayInTheLife", "#BehindTheScenes", "#RealTalk"],
+            predicted_virality_score: 65,
+            trending_topic_id: null
+          },
+          {
+            title: "Announce a Milestone or Achievement",
+            description: "Share a recent win, project completion, or personal milestone. Celebrate progress and inspire others with your journey.",
+            content_type: "announcement",
+            reasoning: "Celebratory posts receive congratulations and engagement",
+            suggested_hooks: ["I'm excited to share that...", "Big news I've been waiting to announce", "We did it! Here's the story"],
+            relevant_hashtags: ["#Milestone", "#Achievement", "#Gratitude"],
+            predicted_virality_score: 72,
+            trending_topic_id: null
+          }
+        ]
+      }
     }
 
     // Save ideas to database

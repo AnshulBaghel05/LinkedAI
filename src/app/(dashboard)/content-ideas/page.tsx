@@ -11,10 +11,54 @@ export default function ContentIdeasPage() {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [contentIdeas, setContentIdeas] = useState<any[]>([])
   const supabase = createClient()
 
+  const loadContentIdeas = async (generate: boolean = false) => {
+    try {
+      // If generate is true, call POST to generate new ideas, otherwise GET existing ones
+      const response = await fetch('/api/content/ideas/generate', {
+        method: generate ? 'POST' : 'GET',
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // Transform the API response to match our UI format
+        const formattedIdeas = (data.ideas || []).map((idea: any, index: number) => {
+          // Parse description to extract hooks if they exist
+          const hooks = idea.suggested_hooks ||
+                       idea.description?.match(/- (.+)/g)?.slice(0, 3) ||
+                       ['Share your insights on this topic', 'What\'s your experience with this?', 'Here\'s what I learned...']
+
+          return {
+            id: idea.id || index + 1,
+            category: idea.content_type || 'General',
+            icon: idea.content_type === 'tips' ? 'BookOpen' :
+                  idea.content_type === 'story' ? 'Users' :
+                  idea.content_type === 'question' ? 'MessageCircle' :
+                  idea.content_type === 'announcement' ? 'Sparkles' : 'TrendingUp',
+            color: index === 0 ? 'from-blue-500 to-purple-500' :
+                   index === 1 ? 'from-green-500 to-teal-500' :
+                   index === 2 ? 'from-orange-500 to-red-500' :
+                   index === 3 ? 'from-purple-500 to-pink-500' :
+                   'from-pink-500 to-rose-500',
+            title: idea.title || 'Content Idea',
+            description: idea.description?.split('\n\n')[0] || idea.description || 'No description available',
+            hooks: hooks
+          }
+        })
+
+        setContentIdeas(formattedIdeas)
+      }
+    } catch (error) {
+      console.error('Error loading content ideas:', error)
+      setContentIdeas([])
+    }
+  }
+
   useEffect(() => {
-    const getProfile = async () => {
+    const initData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
 
       if (user) {
@@ -28,15 +72,17 @@ export default function ContentIdeasPage() {
           setProfile(profileData)
         }
       }
+
+      await loadContentIdeas(false) // Load existing ideas on initial load
       setLoading(false)
     }
 
-    getProfile()
+    initData()
   }, [])
 
   const handleGenerate = async () => {
     setGenerating(true)
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await loadContentIdeas(true) // Pass true to trigger POST and generate new ideas
     setGenerating(false)
   }
 
@@ -47,74 +93,17 @@ export default function ContentIdeasPage() {
     setTimeout(() => setCopiedId(null), 2000)
   }
 
-  // Mock content ideas
-  const contentIdeas = [
-    {
-      id: 1,
-      category: 'Industry Insights',
-      icon: TrendingUp,
-      color: 'from-blue-500 to-purple-500',
-      title: 'The Future of AI in Your Industry',
-      description: 'Share your perspective on how AI is transforming your industry and what professionals should prepare for.',
-      hooks: [
-        '3 AI trends that will reshape our industry in 2025',
-        'Why most professionals are unprepared for the AI revolution',
-        'I\'ve been tracking AI developments for 5 years. Here\'s what surprised me...',
-      ],
-    },
-    {
-      id: 2,
-      category: 'Personal Story',
-      icon: Users,
-      color: 'from-green-500 to-teal-500',
-      title: 'Career Lesson Learned',
-      description: 'Share a valuable lesson from your professional journey that others can learn from.',
-      hooks: [
-        'My biggest career mistake taught me this valuable lesson',
-        'What I wish I knew 5 years ago about career growth',
-        'The hard truth about success nobody talks about',
-      ],
-    },
-    {
-      id: 3,
-      category: 'How-To Guide',
-      icon: BookOpen,
-      color: 'from-orange-500 to-red-500',
-      title: 'Practical Skills Tutorial',
-      description: 'Create a step-by-step guide teaching a specific skill or process in your expertise area.',
-      hooks: [
-        '5 steps to master [skill] in 30 days',
-        'The framework I use to [achieve result]',
-        'How to [solve problem] without [common pain point]',
-      ],
-    },
-    {
-      id: 4,
-      category: 'Industry News',
-      icon: Sparkles,
-      color: 'from-purple-500 to-pink-500',
-      title: 'React to Recent Development',
-      description: 'Share your expert take on recent news or trends in your industry.',
-      hooks: [
-        'Everyone\'s talking about [news]. Here\'s what they\'re missing...',
-        'Unpopular opinion about [trending topic]',
-        'What [recent event] really means for professionals',
-      ],
-    },
-    {
-      id: 5,
-      category: 'Behind-the-Scenes',
-      icon: Briefcase,
-      color: 'from-pink-500 to-rose-500',
-      title: 'Day in the Life',
-      description: 'Give followers a peek into your work routine or process.',
-      hooks: [
-        'My morning routine that 10x\'d my productivity',
-        'A typical day as a [your role]',
-        'The tools and systems I use daily',
-      ],
-    },
-  ]
+  // Map icon names to components
+  const getIcon = (iconName: string) => {
+    const icons: any = {
+      TrendingUp,
+      Users,
+      BookOpen,
+      Sparkles,
+      Briefcase,
+    }
+    return icons[iconName] || Lightbulb
+  }
 
   if (loading) {
     return (
@@ -168,18 +157,21 @@ export default function ContentIdeasPage() {
         </div>
 
         {/* Content Ideas Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {contentIdeas.map((idea) => (
-            <div
-              key={idea.id}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
-            >
-              {/* Header */}
-              <div className={`bg-gradient-to-r ${idea.color} p-6`}>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                    <idea.icon className="w-5 h-5 text-white" />
-                  </div>
+        {contentIdeas.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {contentIdeas.map((idea) => {
+              const Icon = getIcon(idea.icon)
+              return (
+                <div
+                  key={idea.id}
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  {/* Header */}
+                  <div className={`bg-gradient-to-r ${idea.color} p-6`}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
                   <div>
                     <div className="text-white/80 text-sm font-medium">{idea.category}</div>
                     <h3 className="text-xl font-bold text-white">{idea.title}</h3>
@@ -225,8 +217,33 @@ export default function ContentIdeasPage() {
                 </Button>
               </div>
             </div>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl p-12 border border-gray-200 text-center">
+            <Lightbulb className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Content Ideas Yet</h3>
+            <p className="text-gray-600 mb-4">Click "Generate More" to get AI-powered content suggestions</p>
+            <Button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+            >
+              {generating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Ideas
+                </>
+              )}
+            </Button>
+          </div>
+        )}
 
         {/* Tips Section */}
         <div className="mt-8 bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
