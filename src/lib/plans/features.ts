@@ -82,13 +82,20 @@ export function canAccessRoute(plan: Plan, route: string): boolean {
     '/ab-tests': 'abTests',
     '/workspaces': 'workspaces',
     '/api-docs': 'apiAccess',
-    // Free routes
+    '/competitors': 'abTests', // Pro feature
+    '/top-engagers': 'abTests', // Pro feature
+    // Free routes - available to all users
     '/dashboard': null,
     '/generate': null,
     '/templates': null,
     '/drafts': null,
     '/calendar': null,
     '/scheduled': null,
+    '/leads': null,
+    '/viral-score': null,
+    '/audience-growth': null,
+    '/trending': null,
+    '/content-ideas': null,
     '/notifications': null,
     '/settings': null,
     '/support': null,

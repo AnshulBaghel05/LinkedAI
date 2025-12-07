@@ -2,32 +2,19 @@
 > linkedin-scheduler@0.1.0 build
 > next build
 
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-   ▲ Next.js 16.0.3 (Turbopack)
+   ▲ Next.js 16.0.7 (Turbopack)
    - Environments: .env.local
 
  ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
    Creating an optimized production build ...
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
- ✓ Compiled successfully in 36.3s
+ ✓ Compiled successfully in 36.6s
    Skipping validation of types
    Collecting page data using 7 workers ...
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-   Generating static pages using 7 workers (0/75) ...
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
-   Generating static pages using 7 workers (18/75) 
-   Generating static pages using 7 workers (37/75) 
-   Generating static pages using 7 workers (56/75) 
- ✓ Generating static pages using 7 workers (75/75) in 3.3s
+   Generating static pages using 7 workers (0/93) ...
+   Generating static pages using 7 workers (23/93) 
+   Generating static pages using 7 workers (46/93) 
+   Generating static pages using 7 workers (69/93) 
+ ✓ Generating static pages using 7 workers (93/93) in 2.7s
    Finalizing page optimization ...
 
 Route (app)
@@ -43,22 +30,36 @@ Route (app)
 ├ ƒ /api/ab-tests
 ├ ƒ /api/ab-tests/[id]
 ├ ƒ /api/analytics/best-time
+├ ƒ /api/analytics/growth
 ├ ƒ /api/analytics/overview
 ├ ƒ /api/analytics/posts
 ├ ƒ /api/analytics/sync
+├ ƒ /api/analytics/top-engagers
 ├ ƒ /api/analytics/trend
 ├ ƒ /api/api-keys
 ├ ƒ /api/api-keys/[id]
-├ ƒ /api/auth/[...nextauth]
-├ ƒ /api/auth/linkedin
-├ ƒ /api/auth/linkedin/callback
 ├ ƒ /api/calendar/create-event
 ├ ƒ /api/calendar/delete-event
 ├ ƒ /api/calendar/update-event
+├ ƒ /api/comments/generate-reply
+├ ƒ /api/competitors
+├ ƒ /api/competitors/[id]/posts
+├ ƒ /api/competitors/[id]/sync
+├ ƒ /api/contact
+├ ƒ /api/content/ideas/generate
+├ ƒ /api/cron/content-ideas
+├ ƒ /api/cron/follower-sync
+├ ƒ /api/cron/post-insights
 ├ ƒ /api/cron/publish-scheduled
 ├ ƒ /api/cron/sync-analytics
+├ ƒ /api/cron/trending-topics
 ├ ƒ /api/generate
 ├ ƒ /api/generate/improve
+├ ƒ /api/leads
+├ ƒ /api/leads/export
+├ ƒ /api/leads/lists
+├ ƒ /api/leads/search
+├ ƒ /api/leads/stats
 ├ ƒ /api/linkedin/accounts
 ├ ƒ /api/linkedin/accounts/[accountId]
 ├ ƒ /api/notifications
@@ -67,6 +68,8 @@ Route (app)
 ├ ƒ /api/payments/create-order
 ├ ƒ /api/payments/verify
 ├ ƒ /api/posts/[id]
+├ ƒ /api/posts/[id]/insights
+├ ƒ /api/posts/[id]/predict
 ├ ƒ /api/posts/generate
 ├ ƒ /api/posts/publish
 ├ ƒ /api/posts/save
@@ -74,6 +77,7 @@ Route (app)
 ├ ƒ /api/support/tickets
 ├ ƒ /api/support/tickets/[id]
 ├ ƒ /api/support/tickets/[id]/replies
+├ ƒ /api/trending-topics
 ├ ƒ /api/uploadthing
 ├ ƒ /api/user/profile
 ├ ƒ /api/user/subscription
@@ -102,6 +106,10 @@ Route (app)
 ├ ○ /guides
 ├ ○ /help
 ├ ○ /integrations
+├ ƒ /leads
+├ ƒ /leads/discover
+├ ƒ /leads/export
+├ ƒ /leads/lists
 ├ ○ /login
 ├ ○ /notifications
 ├ ○ /press

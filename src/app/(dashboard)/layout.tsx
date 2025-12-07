@@ -23,7 +23,7 @@ const navItems = [
   { href: '/calendar', icon: Calendar, label: 'Calendar', requiresPlan: false },
   { href: '/scheduled', icon: Clock, label: 'Scheduled', requiresPlan: false },
   { href: '/analytics', icon: BarChart3, label: 'Analytics', badge: 'Pro', requiresPlan: true },
-  { href: '/best-time', icon: TrendingUp, label: 'Best Time', requiresPlan: false },
+  { href: '/best-time', icon: TrendingUp, label: 'Best Time', badge: 'Pro', requiresPlan: true },
   { href: '/ab-tests', icon: TestTube2, label: 'A/B Tests', badge: 'Pro', requiresPlan: true },
   // NEW UNIQUE FEATURES
   { href: '/leads', icon: Users, label: 'Lead Generation', badge: 'New', requiresPlan: false },
