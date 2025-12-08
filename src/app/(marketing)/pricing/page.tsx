@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Navbar } from '@/components/landing/navbar'
 import { Footer } from '@/components/landing/footer'
 import { Button } from '@/components/ui/button'
-import { Check, Sparkles, Zap, Star, Crown, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { Check, Sparkles, Zap, Star, ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -98,34 +98,6 @@ const plans = [
     buttonLink: '/signup?plan=standard',
     popular: false,
   },
-  {
-    id: 'custom',
-    name: 'Enterprise',
-    price: 'Custom',
-    period: '',
-    description: 'Tailored to your needs',
-    icon: Crown,
-    color: 'from-orange-500 to-red-600',
-    postsPerMonth: 'Unlimited',
-    linkedinAccounts: 'Unlimited accounts',
-    features: [
-      'Unlimited AI posts',
-      'Unlimited lead discoveries',
-      'Unlimited competitors',
-      'Unlimited team members',
-      'Dedicated account manager',
-      'Custom AI training',
-      'White-label platform',
-      'SLA guarantee (99.9% uptime)',
-      'Custom integrations',
-      'Enterprise security (SOC 2)',
-      'Onboarding & training',
-      '24/7 priority support',
-    ],
-    buttonText: 'Contact Sales',
-    buttonLink: '/contact',
-    popular: false,
-  },
 ]
 
 export default function PricingPage() {
@@ -171,17 +143,11 @@ export default function PricingPage() {
     }
 
     // For authenticated users, handle plan upgrade/downgrade
-    if (planId === 'custom') {
-      router.push('/contact')
-      return
-    }
-
     if (planId === currentPlan) {
       return // Already on this plan
     }
 
-    // TODO: Implement payment flow for plan changes
-    // For now, redirect to payment or show upgrade modal
+    // Redirect to checkout for plan changes
     router.push(`/checkout?plan=${planId}`)
   }
 
@@ -255,7 +221,7 @@ export default function PricingPage() {
       {/* Pricing Cards */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {plans.map((plan) => {
               const isCurrentPlan = isAuthenticated && plan.id === currentPlan
               const buttonText = getButtonText(plan.id)
@@ -366,7 +332,6 @@ export default function PricingPage() {
                   <th className="text-center py-4 px-4 text-sm font-semibold text-gray-900">Free</th>
                   <th className="text-center py-4 px-4 text-sm font-semibold text-gray-900 bg-blue-50">Pro</th>
                   <th className="text-center py-4 px-4 text-sm font-semibold text-gray-900">Standard</th>
-                  <th className="text-center py-4 px-4 text-sm font-semibold text-gray-900">Enterprise</th>
                 </tr>
               </thead>
               <tbody>
@@ -375,20 +340,17 @@ export default function PricingPage() {
                   <td className="py-4 px-4 text-center text-sm text-gray-900">5/month</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">100/month</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">500/month</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4 text-sm text-gray-700">Lead Discovery</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">50/week</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">500/week</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">2000/week</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4 text-sm text-gray-700">Viral Predictions</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">5/month</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">100/month</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
@@ -396,62 +358,47 @@ export default function PricingPage() {
                   <td className="py-4 px-4 text-center text-sm text-gray-400">—</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">3 competitors</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">10 competitors</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4 text-sm text-gray-700">Top Engagers</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-400">—</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">Top 10</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">Top 50</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4 text-sm text-gray-700">AI Comment Replies</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-400">—</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">20/month</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">100/month</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4 text-sm text-gray-700">Content Ideas</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">5/week</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">20/week</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">50/week</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4 text-sm text-gray-700">LinkedIn Accounts</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">1</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">5</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">10</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4 text-sm text-gray-700">Team Members</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">1</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">1</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">5</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4 text-sm text-gray-700">A/B Testing</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-400">—</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">2 variants</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">5 variants</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">Unlimited</td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-4 px-4 text-sm text-gray-700">API Access</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-400">—</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-400 bg-blue-50">—</td>
-                  <td className="py-4 px-4 text-center text-sm"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                  <td className="py-4 px-4 text-center text-sm"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-4 px-4 text-sm text-gray-700">White-label Options</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-400">—</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-400 bg-blue-50">—</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-400">—</td>
                   <td className="py-4 px-4 text-center text-sm"><Check className="w-5 h-5 text-green-600 mx-auto" /></td>
                 </tr>
                 <tr className="border-b border-gray-100">
@@ -459,7 +406,6 @@ export default function PricingPage() {
                   <td className="py-4 px-4 text-center text-sm text-gray-900">Email</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900 bg-blue-50">Priority</td>
                   <td className="py-4 px-4 text-center text-sm text-gray-900">Priority</td>
-                  <td className="py-4 px-4 text-center text-sm text-gray-900">24/7 Dedicated</td>
                 </tr>
               </tbody>
             </table>

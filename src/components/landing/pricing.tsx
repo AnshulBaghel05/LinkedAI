@@ -81,66 +81,36 @@ const plans = [
     cta: 'Start Free Trial',
     popular: false,
   },
-  {
-    name: 'Custom',
-    price: 'Custom',
-    period: '',
-    description: 'Tailored to your needs',
-    postsPerMonth: 'Unlimited',
-    linkedinAccounts: 'Unlimited accounts',
-    features: [
-      'Unlimited AI posts',
-      'Unlimited lead discoveries',
-      'Unlimited competitors',
-      'Unlimited team members',
-      'Dedicated account manager',
-      'Custom AI training',
-      'White-label platform',
-      'SLA guarantee (99.9% uptime)',
-      'Custom integrations',
-      'Enterprise security (SOC 2)',
-      'Onboarding & training',
-      '24/7 priority support',
-    ],
-    cta: 'Contact Us',
-    popular: false,
-  },
 ]
 
 const comparisonFeatures = [
-  { name: 'Posts per month', free: '5', pro: '100', standard: '500', custom: 'Custom' },
-  { name: 'LinkedIn accounts', free: '1', pro: '5', standard: '10', custom: 'Custom' },
-  { name: 'AI-generated posts', free: true, pro: true, standard: true, custom: true },
-  { name: 'Lead Discovery', free: '50/week', pro: '500/week', standard: '2000/week', custom: 'Unlimited' },
-  { name: 'Viral Predictions', free: '5/month', pro: '100/month', standard: 'Unlimited', custom: 'Unlimited' },
-  { name: 'Competitor Tracking', free: false, pro: '3', standard: '10', custom: 'Unlimited' },
-  { name: 'Top Engagers', free: false, pro: 'Top 10', standard: 'Top 50', custom: 'Unlimited' },
-  { name: 'AI Comment Replies', free: false, pro: '20/month', standard: '100/month', custom: 'Unlimited' },
-  { name: 'Content Ideas', free: '5/week', pro: '20/week', standard: '50/week', custom: 'Unlimited' },
-  { name: 'Basic scheduling', free: true, pro: true, standard: true, custom: true },
-  { name: 'Email support', free: true, pro: true, standard: true, custom: true },
-  { name: 'Best time to post AI', free: true, pro: true, standard: true, custom: true },
-  { name: 'Audience growth tracker', free: true, pro: true, standard: true, custom: true },
-  { name: 'Trending topics access', free: true, pro: true, standard: true, custom: true },
-  { name: 'Basic analytics', free: true, pro: true, standard: true, custom: true },
-  { name: 'Advanced scheduling', free: false, pro: true, standard: true, custom: true },
-  { name: 'Analytics dashboard', free: false, pro: true, standard: true, custom: true },
-  { name: 'Multiple content styles', free: false, pro: true, standard: true, custom: true },
-  { name: 'Priority support', free: false, pro: true, standard: true, custom: true },
-  { name: 'Custom hashtag suggestions', free: false, pro: true, standard: true, custom: true },
-  { name: 'Post performance autopsy', free: false, pro: true, standard: true, custom: true },
-  { name: 'Team collaboration', free: false, pro: false, standard: '5 users', custom: 'Unlimited' },
-  { name: 'Content calendar', free: false, pro: false, standard: true, custom: true },
-  { name: 'A/B testing', free: false, pro: '2 variants', standard: '5 variants', custom: 'Unlimited' },
-  { name: 'Custom branding', free: false, pro: false, standard: true, custom: true },
-  { name: 'API access', free: false, pro: false, standard: true, custom: true },
-  { name: 'White-label reports', free: false, pro: false, standard: true, custom: true },
-  { name: 'Dedicated account manager', free: false, pro: false, standard: false, custom: true },
-  { name: 'Custom AI training', free: false, pro: false, standard: false, custom: true },
-  { name: 'White-label platform', free: false, pro: false, standard: false, custom: true },
-  { name: 'SLA guarantee', free: false, pro: false, standard: false, custom: '99.9%' },
-  { name: 'Custom integrations', free: false, pro: false, standard: false, custom: true },
-  { name: 'Enterprise security', free: false, pro: false, standard: false, custom: 'SOC 2' },
+  { name: 'Posts per month', free: '5', pro: '100', standard: '500' },
+  { name: 'LinkedIn accounts', free: '1', pro: '5', standard: '10' },
+  { name: 'AI-generated posts', free: true, pro: true, standard: true },
+  { name: 'Lead Discovery', free: '50/week', pro: '500/week', standard: '2000/week' },
+  { name: 'Viral Predictions', free: '5/month', pro: '100/month', standard: 'Unlimited' },
+  { name: 'Competitor Tracking', free: false, pro: '3', standard: '10' },
+  { name: 'Top Engagers', free: false, pro: 'Top 10', standard: 'Top 50' },
+  { name: 'AI Comment Replies', free: false, pro: '20/month', standard: '100/month' },
+  { name: 'Content Ideas', free: '5/week', pro: '20/week', standard: '50/week' },
+  { name: 'Basic scheduling', free: true, pro: true, standard: true },
+  { name: 'Email support', free: true, pro: true, standard: true },
+  { name: 'Best time to post AI', free: true, pro: true, standard: true },
+  { name: 'Audience growth tracker', free: true, pro: true, standard: true },
+  { name: 'Trending topics access', free: true, pro: true, standard: true },
+  { name: 'Basic analytics', free: true, pro: true, standard: true },
+  { name: 'Advanced scheduling', free: false, pro: true, standard: true },
+  { name: 'Analytics dashboard', free: false, pro: true, standard: true },
+  { name: 'Multiple content styles', free: false, pro: true, standard: true },
+  { name: 'Priority support', free: false, pro: true, standard: true },
+  { name: 'Custom hashtag suggestions', free: false, pro: true, standard: true },
+  { name: 'Post performance autopsy', free: false, pro: true, standard: true },
+  { name: 'Team collaboration', free: false, pro: false, standard: '5 users' },
+  { name: 'Content calendar', free: false, pro: false, standard: true },
+  { name: 'A/B testing', free: false, pro: '2 variants', standard: '5 variants' },
+  { name: 'Custom branding', free: false, pro: false, standard: true },
+  { name: 'API access', free: false, pro: false, standard: true },
+  { name: 'White-label reports', free: false, pro: false, standard: true },
 ]
 
 export function Pricing() {
@@ -160,7 +130,7 @@ export function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-20">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-20">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -240,9 +210,6 @@ export function Pricing() {
                     <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900 min-w-[140px]">
                       Standard
                     </th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900 min-w-[140px]">
-                      Custom
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -282,17 +249,6 @@ export function Pricing() {
                           )
                         ) : (
                           <span className="text-sm font-semibold text-gray-900">{feature.standard}</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        {typeof feature.custom === 'boolean' ? (
-                          feature.custom ? (
-                            <Check className="w-5 h-5 text-[#057642] mx-auto" />
-                          ) : (
-                            <X className="w-5 h-5 text-gray-300 mx-auto" />
-                          )
-                        ) : (
-                          <span className="text-sm font-semibold text-gray-900">{feature.custom}</span>
                         )}
                       </td>
                     </tr>
