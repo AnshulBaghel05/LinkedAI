@@ -34,9 +34,9 @@ export const PLAN_CONFIGS = {
   pro: {
     id: 'pro',
     name: 'Pro',
-    price: 99900, // ₹999 in paise
-    posts_limit: 25, // 5x of free (5 x 5 = 25)
-    ai_credits: 25,
+    price: 2900, // $29 in cents
+    posts_limit: 100,
+    ai_credits: 100,
     features: [
       '25 posts per month (5x Free)',
       '25 AI generations',
@@ -50,9 +50,9 @@ export const PLAN_CONFIGS = {
   standard: {
     id: 'standard',
     name: 'Standard',
-    price: 299900, // ₹2,999 in paise
-    posts_limit: 100, // 20x of free (5 x 20 = 100)
-    ai_credits: 100,
+    price: 7900, // $79 in cents
+    posts_limit: 500,
+    ai_credits: 500,
     features: [
       '100 posts per month (20x Free)',
       '100 AI generations',
@@ -95,8 +95,8 @@ export async function createRazorpayOrder(amount: number, notes?: any) {
 
   try {
     const order = await razorpay.orders.create({
-      amount: amount, // Amount in paise
-      currency: 'INR',
+      amount: amount, // Amount in cents for USD
+      currency: 'USD',
       notes: notes || {},
     })
 
