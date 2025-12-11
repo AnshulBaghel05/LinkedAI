@@ -1,0 +1,73 @@
+Fix critical issues: subscriptions, OAuth, scheduled posts, plan naming, missing pages
+
+CRITICAL FIXES:
+1. Subscription Not Found Error
+   - Created migration to backfill missing subscriptions for all existing users
+   - Updated trigger to auto-create BOTH profile AND subscription for new users
+   - Added fallback logic in canGenerateAI() to auto-create free subscription if missing
+   - Fixes: "Subscription not found" errors despite having generation credits
+
+2. Scheduled Posts Not Publishing
+   - Fixed Cloudflare Worker cron jobs (all 6 functions)
+   - Changed HTTP method from POST to GET
+   - Fixed URL from https://www.linkedai.site to https://linkedai.site
+   - Fixes: Posts scheduled on Dec 9 still not published on Dec 11
+
+3. Plan Naming Inconsistency
+   - Standardized on: 'free', 'pro', 'standard', 'enterprise'
+   - Updated database constraints to match code
+   - Aligned all credit limits across PLAN_LIMITS and PLAN_CONFIGS
+   - Changed 'custom' → 'enterprise', 'starter' → 'pro'
+   - Fixes: Database constraint violations when updating plans
+
+4. Missing Navigation Pages (404 Errors)
+   - Created /competitors page with "Coming Soon" placeholder
+   - Created /top-engagers page with "Coming Soon" placeholder
+   - Both use PlanProtectedRoute for proper access control
+   - Fixes: Sidebar links returning 404 errors
+
+5. LinkedIn OAuth Documentation
+   - Updated .env.example with correct callback URL documentation
+   - Clarified correct URL: /auth/callback (not /api/linkedin-oauth/callback)
+   - Fixes: OAuth configuration confusion
+
+6. TypeScript Errors
+   - Fixed Button variant type errors in notifications/page.tsx
+   - Added 'as const' assertions for proper type narrowing
+   - Fixes: Build errors in production
+
+CHANGES:
+Modified:
+- .env.example - Updated OAuth documentation
+- cloudflare-workers/cron-worker.js - Fixed all 6 cron functions
+- src/app/(dashboard)/notifications/page.tsx - Fixed TypeScript errors
+- src/lib/plans/features.ts - Updated plan naming
+- src/lib/razorpay/server.ts - Updated plan naming and aligned limits
+- src/lib/usage/limits.ts - Added auto-subscription creation, updated plan names
+
+Added:
+- src/app/(dashboard)/competitors/page.tsx - New page
+- src/app/(dashboard)/top-engagers/page.tsx - New page
+- supabase/migrations/20250211_backfill_subscriptions.sql - Migration
+- supabase/migrations/20250211_fix_handle_new_user_trigger.sql - Migration
+- supabase/migrations/20250211_fix_plan_name_consistency.sql - Migration
+- CLOUDFLARE_WORKER_DEPLOYMENT.md - Deployment guide
+- CRITICAL_FIXES_COMPLETED.md - Fix summary
+- DEPLOYMENT_SUMMARY.md - Deployment steps
+- DNS_SECURITY_SETUP.md - DMARC/SPF/DKIM setup
+- MIGRATION_FIX.md - Migration error fixes
+- VERCEL_DNS_INSTRUCTIONS.md - DNS update guide
+
+DEPLOYMENT REQUIRED:
+1. Push to Vercel (automatic)
+2. Run 3 migrations in Supabase Dashboard
+3. Deploy Cloudflare Worker using wrangler
+
+TESTING:
+- New users will auto-get subscriptions
+- Existing users will auto-get subscriptions on first AI generation
+- Scheduled posts will publish within 15 minutes after worker deployment
+- Navigation pages no longer show 404
+- Plan names consistent across all systems
+
+🤖 Generated with Claude Code

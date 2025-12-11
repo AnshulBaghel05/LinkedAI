@@ -16,19 +16,21 @@ export function getRazorpayInstance() {
 }
 
 // Plan configurations
+// Standard plan names: 'free' | 'pro' | 'standard' | 'enterprise'
 export const PLAN_CONFIGS = {
   free: {
     id: 'free',
     name: 'Free',
     price: 0,
-    posts_limit: 5,
-    ai_credits: 5,
+    posts_limit: 20,
+    ai_credits: 10,
+    linkedin_accounts: 1,
     features: [
-      '5 posts per month',
-      '5 AI generations',
+      '20 posts per month',
+      '10 AI generations',
       'Basic analytics',
       'Email support',
-      'LinkedIn connection',
+      '1 LinkedIn account',
     ],
   },
   pro: {
@@ -36,12 +38,14 @@ export const PLAN_CONFIGS = {
     name: 'Pro',
     price: 2900, // $29 in cents
     posts_limit: 100,
-    ai_credits: 100,
+    ai_credits: 200,
+    linkedin_accounts: 5,
     features: [
-      '25 posts per month (5x Free)',
-      '25 AI generations',
+      '100 posts per month',
+      '200 AI generations',
       'Advanced analytics',
       'Priority email support',
+      '5 LinkedIn accounts',
       'Custom scheduling',
       'LinkedIn analytics',
       'Post templates',
@@ -52,12 +56,14 @@ export const PLAN_CONFIGS = {
     name: 'Standard',
     price: 7900, // $79 in cents
     posts_limit: 500,
-    ai_credits: 500,
+    ai_credits: 1000,
+    linkedin_accounts: 10,
     features: [
-      '100 posts per month (20x Free)',
-      '100 AI generations',
+      '500 posts per month',
+      '1000 AI generations',
       'Advanced analytics & insights',
       'Priority support (24/7)',
+      '10 LinkedIn accounts',
       'Custom scheduling',
       'LinkedIn analytics',
       'Post templates library',
@@ -66,20 +72,22 @@ export const PLAN_CONFIGS = {
       'Engagement tracking',
     ],
   },
-  custom: {
-    id: 'custom',
-    name: 'Custom',
+  enterprise: {
+    id: 'enterprise',
+    name: 'Enterprise',
     price: 0, // Contact for pricing
-    posts_limit: -1, // Custom
-    ai_credits: -1, // Custom
+    posts_limit: -1, // Unlimited
+    ai_credits: -1, // Unlimited
+    linkedin_accounts: -1, // Unlimited
     features: [
-      'Custom posts limit',
-      'Custom AI generations',
+      'Unlimited posts',
+      'Unlimited AI generations',
       'Dedicated account manager',
       '24/7 Priority support',
       'Custom integrations',
       'Advanced analytics & reporting',
       'Unlimited team members',
+      'Unlimited LinkedIn accounts',
       'API access',
       'White-label options',
       'Custom features on demand',

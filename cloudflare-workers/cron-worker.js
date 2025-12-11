@@ -122,12 +122,11 @@ export default {
  */
 async function publishScheduledPosts(env) {
   try {
-    const response = await fetch('https://www.linkedai.site/api/cron/publish-scheduled', {
-      method: 'POST',
+    const response = await fetch('https://linkedai.site/api/cron/publish-scheduled', {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${env.CRON_SECRET}`,
-        'User-Agent': 'Cloudflare-Workers-Cron/1.0',
-        'Content-Type': 'application/json'
+        'User-Agent': 'Cloudflare-Workers-Cron/1.0'
       }
     })
 
@@ -160,12 +159,11 @@ async function publishScheduledPosts(env) {
  */
 async function syncAnalytics(env) {
   try {
-    const response = await fetch('https://www.linkedai.site/api/cron/sync-analytics', {
-      method: 'POST',
+    const response = await fetch('https://linkedai.site/api/cron/sync-analytics', {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${env.CRON_SECRET}`,
-        'User-Agent': 'Cloudflare-Workers-Cron/1.0',
-        'Content-Type': 'application/json'
+        'User-Agent': 'Cloudflare-Workers-Cron/1.0'
       }
     })
 
@@ -198,12 +196,11 @@ async function syncAnalytics(env) {
  */
 async function syncFollowers(env) {
   try {
-    const response = await fetch('https://www.linkedai.site/api/cron/follower-sync', {
-      method: 'POST',
+    const response = await fetch('https://linkedai.site/api/cron/follower-sync', {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${env.CRON_SECRET}`,
-        'User-Agent': 'Cloudflare-Workers-Cron/1.0',
-        'Content-Type': 'application/json'
+        'User-Agent': 'Cloudflare-Workers-Cron/1.0'
       }
     })
 
@@ -236,12 +233,11 @@ async function syncFollowers(env) {
  */
 async function generatePostInsights(env) {
   try {
-    const response = await fetch('https://www.linkedai.site/api/cron/post-insights', {
-      method: 'POST',
+    const response = await fetch('https://linkedai.site/api/cron/post-insights', {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${env.CRON_SECRET}`,
-        'User-Agent': 'Cloudflare-Workers-Cron/1.0',
-        'Content-Type': 'application/json'
+        'User-Agent': 'Cloudflare-Workers-Cron/1.0'
       }
     })
 
@@ -274,12 +270,11 @@ async function generatePostInsights(env) {
  */
 async function generateContentIdeas(env) {
   try {
-    const response = await fetch('https://www.linkedai.site/api/cron/content-ideas', {
-      method: 'POST',
+    const response = await fetch('https://linkedai.site/api/cron/content-ideas', {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${env.CRON_SECRET}`,
-        'User-Agent': 'Cloudflare-Workers-Cron/1.0',
-        'Content-Type': 'application/json'
+        'User-Agent': 'Cloudflare-Workers-Cron/1.0'
       }
     })
 
@@ -312,12 +307,11 @@ async function generateContentIdeas(env) {
  */
 async function updateTrendingTopics(env) {
   try {
-    const response = await fetch('https://www.linkedai.site/api/cron/trending-topics', {
-      method: 'POST',
+    const response = await fetch('https://linkedai.site/api/cron/trending-topics', {
+      method: 'GET',
       headers: {
         'Authorization': `Bearer ${env.CRON_SECRET}`,
-        'User-Agent': 'Cloudflare-Workers-Cron/1.0',
-        'Content-Type': 'application/json'
+        'User-Agent': 'Cloudflare-Workers-Cron/1.0'
       }
     })
 

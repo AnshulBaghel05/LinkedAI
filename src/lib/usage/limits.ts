@@ -1,11 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
 
+// Standard plan names: 'free' | 'pro' | 'standard' | 'enterprise'
+// Must match PLAN_CONFIGS in src/lib/razorpay/server.ts
 export const PLAN_LIMITS = {
   free: {
-    postsPerMonth: 5,
+    postsPerMonth: 20,
     linkedinAccounts: 1,
     aiGenerations: 10,
-    scheduledPosts: 5,
+    scheduledPosts: 20,
   },
   pro: {
     postsPerMonth: 100,
@@ -19,7 +21,7 @@ export const PLAN_LIMITS = {
     aiGenerations: 1000,
     scheduledPosts: 500,
   },
-  custom: {
+  enterprise: {
     postsPerMonth: Infinity,
     linkedinAccounts: Infinity,
     aiGenerations: Infinity,
@@ -159,10 +161,43 @@ export async function canGenerateAI(userId: string): Promise<{ allowed: boolean;
     .single()
 
   if (!subscription) {
-    return {
-      allowed: false,
-      reason: 'Subscription not found. Please contact support.',
+    // Auto-create a free subscription if missing (fallback for existing users)
+    const { createAdminClient } = await import('@/lib/supabase/admin')
+    const adminClient = await createAdminClient()
+
+    const { data: newSubscription, error: createError } = await adminClient
+      .from('subscriptions')
+      .insert({
+        user_id: userId,
+        plan: 'free',
+        status: 'active',
+        billing_cycle: 'monthly',
+        posts_limit: 20,
+        posts_used: 0,
+        ai_generations_limit: 10,
+        ai_generations_used: 0,
+        ai_credits_limit: 10,
+        ai_credits_used: 0,
+        team_members_limit: 1,
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        ai_generations_reset_at: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString()
+      })
+      .select('plan, ai_generations_limit, ai_generations_used')
+      .single()
+
+    if (createError || !newSubscription) {
+      console.error('[canGenerateAI] Failed to create subscription:', createError)
+      return {
+        allowed: false,
+        reason: 'Subscription not found. Please contact support.',
+      }
     }
+
+    // Use the newly created subscription
+    const limit = newSubscription.ai_generations_limit || 10
+    const used = newSubscription.ai_generations_used || 0
+    return { allowed: limit > used }
   }
 
   const limit = subscription.ai_generations_limit || 5

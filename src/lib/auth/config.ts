@@ -1,3 +1,22 @@
+/**
+ * NextAuth Configuration (CURRENTLY UNUSED)
+ *
+ * This file contains NextAuth.js configuration but is NOT currently used in the application.
+ * The application uses Supabase Auth instead for all authentication flows:
+ * - Email/Password login via Supabase Auth
+ * - LinkedIn OAuth via Supabase Auth (linkedin_oidc provider)
+ * - Password reset via Supabase Auth
+ * - Email confirmation via Supabase Auth
+ *
+ * This file is kept for reference in case NextAuth is needed in the future.
+ * To use NextAuth, you would need to:
+ * 1. Create /api/auth/[...nextauth]/route.ts with NextAuth handler
+ * 2. Set NEXTAUTH_SECRET and NEXTAUTH_URL in .env.local
+ * 3. Update authentication flows to use NextAuth instead of Supabase
+ *
+ * Current auth implementation: See src/app/auth/callback/route.ts and src/middleware.ts
+ */
+
 import { NextAuthOptions } from 'next-auth'
 import { SupabaseAdapter } from '@auth/supabase-adapter'
 import GoogleProvider from 'next-auth/providers/google'
@@ -15,8 +34,8 @@ export const authOptions: NextAuthOptions = {
 
   // Authentication providers
   providers: [
-    // NOTE: LinkedIn OAuth is handled by custom handler at /api/linkedin-oauth
-    // for multi-account support. Do NOT add LinkedIn provider here as it conflicts with our custom implementation.
+    // NOTE: LinkedIn OAuth is handled by Supabase Auth with linkedin_oidc provider
+    // See src/app/(auth)/login/page.tsx and src/app/auth/callback/route.ts
 
     // Google OAuth (optional - requires setup)
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -27,27 +46,6 @@ export const authOptions: NextAuthOptions = {
           }),
         ]
       : []),
-
-    // Email magic link support can be added later by:
-    // 1. Install nodemailer: npm install nodemailer
-    // 2. Uncomment the EmailProvider code below
-    // 3. Configure RESEND_API_KEY in .env.local
-
-    // ...(process.env.RESEND_API_KEY
-    //   ? [
-    //       EmailProvider({
-    //         server: {
-    //           host: 'smtp.resend.com',
-    //           port: 465,
-    //           auth: {
-    //             user: 'resend',
-    //             pass: process.env.RESEND_API_KEY,
-    //           },
-    //         },
-    //         from: process.env.RESEND_FROM_EMAIL || 'noreply@yourdomain.com',
-    //       }),
-    //     ]
-    //   : []),
   ],
 
   // Session configuration
@@ -72,7 +70,7 @@ export const authOptions: NextAuthOptions = {
   // Callbacks
   callbacks: {
     // JWT callback - Add user data to token
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id
         token.email = user.email
@@ -92,7 +90,7 @@ export const authOptions: NextAuthOptions = {
     },
 
     // Sign in callback - Custom logic after sign in
-    async signIn({ user, account, profile }) {
+    async signIn() {
       // Allow all sign ins
       return true
     },

@@ -1,8 +1,10 @@
 /**
  * Plan-based feature access configuration
+ * Standard plan names: 'free' | 'pro' | 'standard' | 'enterprise'
+ * Must match database CHECK constraints and PLAN_CONFIGS
  */
 
-export type Plan = 'free' | 'starter' | 'pro' | 'enterprise'
+export type Plan = 'free' | 'pro' | 'standard' | 'enterprise'
 
 export interface PlanFeatures {
   // Navigation Features
@@ -27,19 +29,8 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     workspaces: false,
     apiAccess: false,
     linkedinAccounts: 1,
-    postsPerMonth: 10,
-    aiCredits: 50,
-    workspaceMembers: 0,
-  },
-  starter: {
-    analytics: true,
-    bestTime: false,
-    abTests: false,
-    workspaces: false,
-    apiAccess: false,
-    linkedinAccounts: 3,
-    postsPerMonth: 50,
-    aiCredits: 200,
+    postsPerMonth: 20,
+    aiCredits: 10,
     workspaceMembers: 0,
   },
   pro: {
@@ -48,10 +39,21 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     abTests: true,
     workspaces: false,
     apiAccess: false,
+    linkedinAccounts: 5,
+    postsPerMonth: 100,
+    aiCredits: 200,
+    workspaceMembers: 1,
+  },
+  standard: {
+    analytics: true,
+    bestTime: true,
+    abTests: true,
+    workspaces: false,
+    apiAccess: false,
     linkedinAccounts: 10,
-    postsPerMonth: 200,
+    postsPerMonth: 500,
     aiCredits: 1000,
-    workspaceMembers: 0,
+    workspaceMembers: 3,
   },
   enterprise: {
     analytics: true,

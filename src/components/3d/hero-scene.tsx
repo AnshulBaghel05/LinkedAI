@@ -145,9 +145,8 @@ function Particles({ count = 100 }) {
         <bufferAttribute
           attach="attributes-position"
           count={points.length / 3}
-          array={points}
           itemSize={3}
-          args={[points, 3]}
+          args={[new Float32Array(points), 3]}
         />
       </bufferGeometry>
       <pointsMaterial size={0.05} color="#6366f1" transparent opacity={0.6} sizeAttenuation />
