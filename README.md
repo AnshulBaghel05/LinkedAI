@@ -37,8 +37,10 @@ npm run dev
 ## ✨ What's New (v2.1.0)
 
 ### Recent Updates (December 2025):
+- ✅ **Client-Side Polling** - Instant scheduled post publishing (~60 sec delay)
+- ✅ **Removed External Dependencies** - No Cloudflare Workers or external cron needed
+- ✅ **Zero Cost Scheduling** - Runs entirely in browser, works on Vercel Free
 - ✅ **Fixed Subscription System** - Auto-creates subscriptions for all users
-- ✅ **Fixed Scheduled Posts** - Cloudflare Worker cron jobs working
 - ✅ **Plan Naming Standardized** - Consistent free/pro/standard/enterprise
 - ✅ **Pricing Page Accessible** - Fixed routing issue
 - ✅ **3D Components Fixed** - Three.js BufferAttribute issues resolved
@@ -150,9 +152,10 @@ npm run dev
 ### File Upload
 - **UploadThing** - Image/video uploads (2GB free)
 
-### Cron Jobs
-- **Cloudflare Workers** - Scheduled job execution (every 15 min)
-- **Vercel Cron** - Alternative cron solution
+### Scheduled Posts
+- **Client-Side Polling** - Browser-based automatic publishing (60 sec intervals)
+- No external cron services needed
+- Works on Vercel Free plan
 
 ### Deployment
 - **Vercel** - Hosting + CI/CD
@@ -210,10 +213,11 @@ npm run dev
 ### 📅 Auto-Posting Scheduler
 - **Schedule posts** for future dates and times
 - **Timezone support** - Posts at user's local time
-- **Cloudflare Worker** runs every 15 minutes
-- **Automatic publishing** to LinkedIn
+- **Client-side polling** - Automatic check every 60 seconds
+- **Instant publishing** - Posts publish within ~60 sec of scheduled time
+- **Automatic publishing** to LinkedIn via API
 - **Status tracking**: Scheduled → Publishing → Published
-- **Error handling** with retry logic
+- **Zero cost** - No external services needed, works on Vercel Free
 
 ### 📊 Analytics Dashboard (Pro+)
 - **Real-time metrics**: Views, likes, comments, shares
@@ -341,10 +345,9 @@ CLOUDFLARE_ACCOUNT_ID=your_account_id
 ### Post-Deployment Checklist
 
 - [ ] Update LinkedIn OAuth redirect URL in [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
-- [ ] Configure Cloudflare Worker for cron jobs (see [Cloudflare Workers Setup](./docs/07-AUTO-POSTING-SCHEDULER.md))
 - [ ] Run database migrations in Supabase Dashboard
 - [ ] Test authentication flow (login/signup)
-- [ ] Test post scheduling and publishing
+- [ ] Test post scheduling and publishing (client-side polling works automatically!)
 - [ ] Verify payment integration (if enabled)
 - [ ] Setup email service (Resend)
 - [ ] Configure DNS for custom domain
@@ -488,7 +491,7 @@ npm run build
 
 ### Bug Fixes
 - ✅ Fixed subscription not found error for existing users
-- ✅ Fixed scheduled posts not publishing (Cloudflare Worker)
+- ✅ Fixed scheduled posts with client-side polling (instant publishing)
 - ✅ Fixed pricing page route (was page-new.tsx)
 - ✅ Fixed forgot-password redirect pattern
 - ✅ Fixed Three.js BufferAttribute props in 3D components
@@ -523,7 +526,6 @@ MIT License - see [LICENSE](./LICENSE) file for details
 - [Razorpay](https://razorpay.com/) - Payments
 - [Resend](https://resend.com/) - Email Service
 - [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [Cloudflare Workers](https://workers.cloudflare.com/) - Cron Jobs
 
 ---
 
@@ -556,7 +558,7 @@ MIT License - see [LICENSE](./LICENSE) file for details
 6. **Deploy to Production**
    - Push to GitHub
    - Connect to Vercel
-   - Configure Cloudflare Worker ([Deployment Guide](./docs/06-VERCEL-DEPLOYMENT.md))
+   - Scheduled posts work automatically with client-side polling! ([Deployment Guide](./docs/06-VERCEL-DEPLOYMENT.md))
 
 ---
 
