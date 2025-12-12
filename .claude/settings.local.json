@@ -11,7 +11,10 @@
       "Bash(npm run dev:*)",
       "Bash(curl http://localhost:3000/api/queue/dashboard)",
       "Bash(node test-redis-connection.js:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(git branch:*)",
+      "Bash(ls:*)",
+      "Bash(git checkout:*)"
     ]
   }
 }
