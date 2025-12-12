@@ -5,6 +5,10 @@
     {
       "path": "/api/cron/subscription-management",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/queue/worker",
+      "schedule": "* * * * *"
     }
   ]
 }

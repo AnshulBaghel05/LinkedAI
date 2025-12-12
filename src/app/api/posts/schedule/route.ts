@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { schedulePost } from '@/lib/queue/scheduled-posts'
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,10 +29,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if LinkedIn is connected
+    // Check if LinkedIn is connected and get access token
     const { data: profile } = await supabase
       .from('profiles')
-      .select('linkedin_connected')
+      .select('linkedin_connected, linkedin_access_token, linkedin_user_id')
       .eq('id', user.id)
       .single()
 
@@ -42,7 +43,30 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Update post with scheduled information
+    if (!profile.linkedin_access_token || !profile.linkedin_user_id) {
+      return NextResponse.json(
+        { error: 'LinkedIn access token not found. Please reconnect your LinkedIn account.' },
+        { status: 400 }
+      )
+    }
+
+    // Get the post content first
+    const { data: existingPost, error: fetchError } = await supabase
+      .from('posts')
+      .select('*')
+      .eq('id', postId)
+      .eq('user_id', user.id)
+      .single()
+
+    if (fetchError || !existingPost) {
+      console.error('Error fetching post:', fetchError)
+      return NextResponse.json(
+        { error: 'Post not found' },
+        { status: 404 }
+      )
+    }
+
+    // Update post with scheduled information in database
     const { data: post, error: updateError } = await supabase
       .from('posts')
       .update({
@@ -59,6 +83,37 @@ export async function POST(request: NextRequest) {
       console.error('Error updating post:', updateError)
       return NextResponse.json(
         { error: 'Failed to schedule post' },
+        { status: 500 }
+      )
+    }
+
+    // Add job to Bull queue for automatic publishing
+    try {
+      const job = await schedulePost({
+        postId: post.id,
+        userId: user.id,
+        content: post.content,
+        scheduledFor: scheduledDate.toISOString(),
+        linkedInUserId: profile.linkedin_user_id,
+        linkedInAccessToken: profile.linkedin_access_token,
+      })
+
+      console.log(`[Schedule] Added post ${postId} to Bull queue with job ID ${job.id}`)
+    } catch (queueError: any) {
+      console.error('[Schedule] Failed to add job to queue:', queueError)
+
+      // Revert post status if queue scheduling fails
+      await supabase
+        .from('posts')
+        .update({
+          status: 'draft',
+          scheduled_for: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', postId)
+
+      return NextResponse.json(
+        { error: 'Failed to schedule post in queue. Please try again.' },
         { status: 500 }
       )
     }
