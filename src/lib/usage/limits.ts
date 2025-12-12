@@ -165,17 +165,19 @@ export async function canGenerateAI(userId: string): Promise<{ allowed: boolean;
     const { createAdminClient } = await import('@/lib/supabase/admin')
     const adminClient = createAdminClient()
 
-    // Calculate next month for reset date
     const now = new Date()
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
-    const { data: newSubscription, error: createError } = await adminClient
+    // Calculate anniversary day (cap at 28 for month-end compatibility)
+    const anniversaryDay = Math.min(now.getDate(), 28)
+
+    const { data: newSubscription, error: createError} = await adminClient
       .from('subscriptions')
       .insert({
         user_id: userId,
         plan: 'free',
         status: 'active',
         billing_cycle: 'monthly',
+        billing_anniversary_day: anniversaryDay,
         posts_limit: 20,
         posts_used: 0,
         ai_generations_limit: 10,
@@ -184,8 +186,10 @@ export async function canGenerateAI(userId: string): Promise<{ allowed: boolean;
         ai_credits_used: 0,
         team_members_limit: 1,
         current_period_start: now.toISOString(),
-        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        ai_generations_reset_at: nextMonth.toISOString()
+        current_period_end: null, // Free users don't have billing periods
+        next_billing_date: null, // Free users don't have billing dates
+        last_payment_date: null,
+        payment_reminder_sent: false,
       })
       .select('plan, ai_generations_limit, ai_generations_used')
       .single()

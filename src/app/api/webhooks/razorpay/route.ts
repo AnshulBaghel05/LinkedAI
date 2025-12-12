@@ -54,17 +54,36 @@ export async function POST(request: NextRequest) {
 
         if (notes && notes.user_id && notes.plan) {
           const limits = getPlanLimits(notes.plan)
+          const now = new Date()
 
-          // 1. Update subscriptions table with plan and limits
+          // Calculate anniversary day (cap at 28 to handle month-end dates)
+          const anniversaryDay = Math.min(now.getDate(), 28)
+
+          // Calculate next billing date (30 days from now, on anniversary day)
+          const nextBillingDate = new Date(now)
+          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1)
+          nextBillingDate.setDate(anniversaryDay)
+
+          // 1. Update subscriptions table with plan, limits, and anniversary billing
           await supabase
             .from('subscriptions')
             .update({
               plan: notes.plan,
               status: 'active',
-              posts_remaining: limits.posts_limit,
+              billing_anniversary_day: anniversaryDay,
+              posts_limit: limits.posts_limit,
+              posts_used: 0, // Reset usage on payment
+              ai_generations_limit: limits.ai_credits,
+              ai_generations_used: 0, // Reset usage on payment
+              ai_credits_used: 0,
               razorpay_payment_id: paymentId,
-              current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
+              last_payment_date: now.toISOString(),
+              current_period_start: now.toISOString(),
+              current_period_end: nextBillingDate.toISOString(),
+              next_billing_date: nextBillingDate.toISOString(),
+              payment_reminder_sent: false,
+              grace_period_end: null,
+              updated_at: now.toISOString(),
             })
             .eq('user_id', notes.user_id)
 
