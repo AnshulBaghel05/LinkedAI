@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getPrimaryLinkedInAccount } from '@/lib/linkedin/accounts'
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,21 +36,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get LinkedIn access token from profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('linkedin_access_token, linkedin_user_id, linkedin_connected')
-      .eq('id', user.id)
-      .single()
+    // Get primary LinkedIn account
+    const linkedInAccount = await getPrimaryLinkedInAccount(user.id)
 
-    if (profileError || !profile || !profile.linkedin_connected) {
+    if (!linkedInAccount) {
       return NextResponse.json(
         { error: 'LinkedIn not connected. Please connect your LinkedIn account in settings.' },
         { status: 403 }
       )
     }
 
-    if (!profile.linkedin_access_token) {
+    if (!linkedInAccount.linkedin_access_token) {
       return NextResponse.json(
         { error: 'LinkedIn access token not found. Please reconnect your LinkedIn account.' },
         { status: 403 }
@@ -61,7 +58,7 @@ export async function POST(request: NextRequest) {
       // First, get the user's LinkedIn URN
       const userInfoResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
         headers: {
-          'Authorization': `Bearer ${profile.linkedin_access_token}`,
+          'Authorization': `Bearer ${linkedInAccount.linkedin_access_token}`,
         },
       })
 
@@ -76,7 +73,7 @@ export async function POST(request: NextRequest) {
       const linkedInResponse = await fetch('https://api.linkedin.com/v2/ugcPosts', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${profile.linkedin_access_token}`,
+          'Authorization': `Bearer ${linkedInAccount.linkedin_access_token}`,
           'Content-Type': 'application/json',
           'X-Restli-Protocol-Version': '2.0.0',
         },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { schedulePost } from '@/lib/queue/scheduled-posts'
+import { getPrimaryLinkedInAccount } from '@/lib/linkedin/accounts'
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,21 +30,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if LinkedIn is connected and get access token
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('linkedin_connected, linkedin_access_token, linkedin_user_id')
-      .eq('id', user.id)
-      .single()
+    // Get primary LinkedIn account
+    const linkedInAccount = await getPrimaryLinkedInAccount(user.id)
 
-    if (!profile?.linkedin_connected) {
+    if (!linkedInAccount) {
       return NextResponse.json(
         { error: 'Please connect your LinkedIn account first to schedule posts' },
         { status: 400 }
       )
     }
 
-    if (!profile.linkedin_access_token || !profile.linkedin_user_id) {
+    if (!linkedInAccount.linkedin_access_token || !linkedInAccount.linkedin_user_id) {
       return NextResponse.json(
         { error: 'LinkedIn access token not found. Please reconnect your LinkedIn account.' },
         { status: 400 }
@@ -94,8 +91,8 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         content: post.content,
         scheduledFor: scheduledDate.toISOString(),
-        linkedInUserId: profile.linkedin_user_id,
-        linkedInAccessToken: profile.linkedin_access_token,
+        linkedInUserId: linkedInAccount.linkedin_user_id,
+        linkedInAccessToken: linkedInAccount.linkedin_access_token,
       })
 
       console.log(`[Schedule] Added post ${postId} to Bull queue with job ID ${job.id}`)
