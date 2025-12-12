@@ -75,50 +75,36 @@ Sets `billing_anniversary_day` on user signup
 
 ---
 
-### ✅ Phase 3: Cron Jobs (COMPLETE)
+### ✅ Phase 3: Unified Cron Job (COMPLETE)
 
-#### ✅ Daily Reset Cron (DONE)
-**File**: `src/app/api/cron/reset-subscriptions/route.ts`
+#### ✅ Subscription Management Cron (DONE)
+**File**: `src/app/api/cron/subscription-management/route.ts`
 
-**Purpose**: Reset usage counters on anniversary dates
+**Purpose**: Unified endpoint handling all 3 subscription management tasks
 
-**Logic:**
+**Task 1 - Reset Subscriptions:**
 1. Find subscriptions where `billing_anniversary_day == today`
 2. Check `next_billing_date <= NOW`
 3. Reset `posts_used`, `ai_generations_used` to 0
 4. Advance billing period by 30 days
 5. Log activity
 
-**Schedule**: Daily at 00:00 UTC
-
-#### ✅ Payment Reminder Cron (DONE)
-**File**: `src/app/api/cron/payment-reminders/route.ts`
-
-**Purpose**: Send reminders 3 days before billing
-
-**Implementation:**
+**Task 2 - Payment Reminders:**
 1. Find subscriptions due in 3 days
 2. Send email via Resend with inline HTML template
 3. Create in-app notification
 4. Mark `payment_reminder_sent = true`
 5. Log activity
 
-**Email Template**: Inline HTML in route.ts
-**Schedule**: Daily at 09:00 UTC
-
-#### ✅ Grace Period Handler (DONE)
-**File**: `src/app/api/cron/handle-grace-periods/route.ts`
-
-**Purpose**: Downgrade unpaid users after 3 days
-
-**Implementation:**
+**Task 3 - Grace Period Handler:**
 1. Find subscriptions past billing date + 3 days
 2. Call `downgrade_to_free_plan()` database function
 3. Update LinkedIn account limit to 1
 4. Create "subscription_downgraded" notification
 5. Log activity
 
-**Schedule**: Daily at 12:00 UTC
+**Schedule**: Every 6 hours (0 */6 * * *)
+**Why Unified**: Vercel Free plan allows max 2 cron jobs, so we consolidated all 3 tasks into 1 endpoint
 
 ---
 
@@ -201,14 +187,17 @@ All development phases are complete. Ready for testing and deployment.
 4. `src/app/api/webhooks/razorpay/route.ts`
 5. `src/lib/usage/limits.ts`
 
-### Cron Jobs (3 files) ✅
-6. `src/app/api/cron/reset-subscriptions/route.ts` ✅
-7. `src/app/api/cron/payment-reminders/route.ts` ✅
-8. `src/app/api/cron/handle-grace-periods/route.ts` ✅
+### Cron Jobs (1 unified file) ✅
+6. `src/app/api/cron/subscription-management/route.ts` ✅ (handles all 3 tasks)
 
 ### Email & Config (2 files) ✅
-9. `src/lib/email/templates.ts` (added sendPaymentReminderEmail function) ✅
-10. `vercel.json` (added 3 cron schedules) ✅
+7. `src/lib/email/templates.ts` (added sendPaymentReminderEmail function) ✅
+8. `vercel.json` (1 cron schedule every 6 hours - Vercel Free limit) ✅
+
+### Legacy Cron Files (kept for reference, not used)
+- `src/app/api/cron/reset-subscriptions/route.ts`
+- `src/app/api/cron/payment-reminders/route.ts`
+- `src/app/api/cron/handle-grace-periods/route.ts`
 
 ---
 
