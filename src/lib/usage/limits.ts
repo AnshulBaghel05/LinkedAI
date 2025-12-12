@@ -163,7 +163,11 @@ export async function canGenerateAI(userId: string): Promise<{ allowed: boolean;
   if (!subscription) {
     // Auto-create a free subscription if missing (fallback for existing users)
     const { createAdminClient } = await import('@/lib/supabase/admin')
-    const adminClient = await createAdminClient()
+    const adminClient = createAdminClient()
+
+    // Calculate next month for reset date
+    const now = new Date()
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
     const { data: newSubscription, error: createError } = await adminClient
       .from('subscriptions')
@@ -179,15 +183,24 @@ export async function canGenerateAI(userId: string): Promise<{ allowed: boolean;
         ai_credits_limit: 10,
         ai_credits_used: 0,
         team_members_limit: 1,
-        current_period_start: new Date().toISOString(),
+        current_period_start: now.toISOString(),
         current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        ai_generations_reset_at: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString()
+        ai_generations_reset_at: nextMonth.toISOString()
       })
       .select('plan, ai_generations_limit, ai_generations_used')
       .single()
 
-    if (createError || !newSubscription) {
+    if (createError) {
       console.error('[canGenerateAI] Failed to create subscription:', createError)
+      console.error('[canGenerateAI] Error details:', JSON.stringify(createError, null, 2))
+      return {
+        allowed: false,
+        reason: 'Subscription not found. Please contact support.',
+      }
+    }
+
+    if (!newSubscription) {
+      console.error('[canGenerateAI] Subscription created but no data returned')
       return {
         allowed: false,
         reason: 'Subscription not found. Please contact support.',

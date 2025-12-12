@@ -78,15 +78,19 @@ export default function GeneratePage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data: subscription } = await supabase
+      const { data: subscription, error } = await supabase
         .from('subscriptions')
         .select('ai_generations_limit, ai_generations_used')
         .eq('user_id', user.id)
         .single()
 
       if (subscription) {
-        const remaining = (subscription.ai_generations_limit || 5) - (subscription.ai_generations_used || 0)
+        const remaining = (subscription.ai_generations_limit || 10) - (subscription.ai_generations_used || 0)
         setPostsRemaining(Math.max(0, remaining))
+      } else {
+        // No subscription found - set default free plan limit
+        console.log('No subscription found, using default free plan limit')
+        setPostsRemaining(10) // Free plan default
       }
     }
   }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface PollingResult {
@@ -25,14 +25,21 @@ export function useScheduledPostsPolling(options: UseScheduledPostsPollingOption
   const [isPolling, setIsPolling] = useState(false)
   const [lastChecked, setLastChecked] = useState<Date | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const isPollingRef = useRef(false)
   const router = useRouter()
 
-  const checkAndPublish = async () => {
-    if (isPolling) return // Prevent concurrent requests
+  const checkAndPublish = useCallback(async () => {
+    if (isPollingRef.current) {
+      console.log('[Polling] Already polling, skipping...')
+      return // Prevent concurrent requests
+    }
 
+    isPollingRef.current = true
     setIsPolling(true)
 
     try {
+      console.log('[Polling] Checking for scheduled posts...')
+
       const response = await fetch('/api/scheduled-posts/publish', {
         method: 'POST',
         headers: {
@@ -41,11 +48,15 @@ export function useScheduledPostsPolling(options: UseScheduledPostsPollingOption
       })
 
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[Polling] Failed to check scheduled posts:', response.status, errorText)
         throw new Error('Failed to check scheduled posts')
       }
 
       const result: PollingResult = await response.json()
       setLastChecked(new Date())
+
+      console.log('[Polling] Check complete:', result)
 
       // If posts were published, notify and refresh
       if (result.published > 0) {
@@ -59,11 +70,12 @@ export function useScheduledPostsPolling(options: UseScheduledPostsPollingOption
         router.refresh()
       }
     } catch (error) {
-      console.error('Error checking scheduled posts:', error)
+      console.error('[Polling] Error checking scheduled posts:', error)
     } finally {
+      isPollingRef.current = false
       setIsPolling(false)
     }
-  }
+  }, [onPublish, router])
 
   useEffect(() => {
     if (!enabled) {
@@ -75,6 +87,8 @@ export function useScheduledPostsPolling(options: UseScheduledPostsPollingOption
       return
     }
 
+    console.log('[Polling] Starting polling with interval:', interval, 'ms')
+
     // Initial check immediately
     checkAndPublish()
 
@@ -85,12 +99,13 @@ export function useScheduledPostsPolling(options: UseScheduledPostsPollingOption
 
     // Cleanup on unmount
     return () => {
+      console.log('[Polling] Stopping polling')
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
         intervalRef.current = null
       }
     }
-  }, [enabled, interval])
+  }, [enabled, interval, checkAndPublish])
 
   return {
     isPolling,
