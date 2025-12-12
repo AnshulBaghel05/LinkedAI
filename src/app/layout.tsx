@@ -13,6 +13,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "LinkedAI - AI LinkedIn Content Scheduler & Ghostwriter",
   description: "Generate a week's worth of engaging LinkedIn posts with AI. Schedule and publish directly to LinkedIn.",
+  other: {
+    'linkedin-verification': 'babce71a-853a-4020-a780-be7c64673c24',
+  },
 };
 
 export default function RootLayout({
