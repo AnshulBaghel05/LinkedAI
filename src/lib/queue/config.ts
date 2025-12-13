@@ -11,7 +11,7 @@ export function createRedisConnection() {
 
   // Parse Redis URL
   const redis = new Redis(redisUrl, {
-    maxRetriesPerRequest: 3,
+    maxRetriesPerRequest: null, // Required for Bull - blocking commands
     enableReadyCheck: false,
     // Optimize for serverless environments
     lazyConnect: true,
