@@ -25,6 +25,28 @@ export async function postToLinkedIn(
   userId: string,
   content: string
 ): Promise<LinkedInPostResponse> {
+  console.log('[LinkedIn] Attempting to post to LinkedIn')
+  console.log('[LinkedIn] User ID:', userId)
+  console.log('[LinkedIn] Content length:', content.length)
+
+  const requestBody = {
+    author: `urn:li:person:${userId}`,
+    lifecycleState: 'PUBLISHED',
+    specificContent: {
+      'com.linkedin.ugc.ShareContent': {
+        shareCommentary: {
+          text: content,
+        },
+        shareMediaCategory: 'NONE',
+      },
+    },
+    visibility: {
+      'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
+    },
+  }
+
+  console.log('[LinkedIn] Request body:', JSON.stringify(requestBody, null, 2))
+
   const response = await fetch('https://api.linkedin.com/v2/ugcPosts', {
     method: 'POST',
     headers: {
@@ -32,30 +54,33 @@ export async function postToLinkedIn(
       'Content-Type': 'application/json',
       'X-Restli-Protocol-Version': '2.0.0',
     },
-    body: JSON.stringify({
-      author: `urn:li:person:${userId}`,
-      lifecycleState: 'PUBLISHED',
-      specificContent: {
-        'com.linkedin.ugc.ShareContent': {
-          shareCommentary: {
-            text: content,
-          },
-          shareMediaCategory: 'NONE',
-        },
-      },
-      visibility: {
-        'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC',
-      },
-    }),
+    body: JSON.stringify(requestBody),
   })
+
+  console.log('[LinkedIn] Response status:', response.status)
+  console.log('[LinkedIn] Response headers:', Object.fromEntries(response.headers.entries()))
 
   if (!response.ok) {
     const errorText = await response.text()
-    console.error('LinkedIn API Error:', errorText)
-    throw new Error(`LinkedIn API error: ${response.status} - ${errorText}`)
+    console.error('[LinkedIn] API Error Response:', errorText)
+    console.error('[LinkedIn] Status:', response.status)
+    console.error('[LinkedIn] Status Text:', response.statusText)
+
+    // Parse error details if possible
+    try {
+      const errorJson = JSON.parse(errorText)
+      console.error('[LinkedIn] Error Details:', JSON.stringify(errorJson, null, 2))
+    } catch (e) {
+      // Error text is not JSON
+    }
+
+    throw new Error(`LinkedIn API error: ${response.status} ${response.statusText} - ${errorText}`)
   }
 
-  return await response.json()
+  const result = await response.json()
+  console.log('[LinkedIn] Successfully posted! Response:', JSON.stringify(result, null, 2))
+
+  return result
 }
 
 /**
