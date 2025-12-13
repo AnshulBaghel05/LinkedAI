@@ -1,10 +1,4 @@
 {
   "buildCommand": "next build",
-  "framework": "nextjs",
-  "crons": [
-    {
-      "path": "/api/queue/worker",
-      "schedule": "* * * * *"
-    }
-  ]
+  "framework": "nextjs"
 }

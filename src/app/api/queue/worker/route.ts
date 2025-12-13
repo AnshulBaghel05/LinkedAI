@@ -16,11 +16,18 @@ export const maxDuration = 300 // 5 minutes for processing jobs
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret for security
+    // Verify cron secret for security (supports both Vercel cron and external services like cron-job.org)
     const authHeader = request.headers.get('authorization')
     const cronSecret = process.env.CRON_SECRET
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    // Allow both Bearer token and simple secret in query params for external cron services
+    const secretFromQuery = request.nextUrl.searchParams.get('secret')
+
+    const isAuthorized =
+      (authHeader && cronSecret && authHeader === `Bearer ${cronSecret}`) ||
+      (secretFromQuery && cronSecret && secretFromQuery === cronSecret)
+
+    if (!isAuthorized) {
       console.error('[Worker API] Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
