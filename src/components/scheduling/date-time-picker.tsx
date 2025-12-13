@@ -54,11 +54,11 @@ export function DateTimePicker({
             onChange={onChange}
             showTimeSelect
             showTimeSelectOnly
-            timeIntervals={15}
+            timeIntervals={1}
             timeCaption="Time"
             dateFormat="h:mm aa"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholderText="Choose a time"
+            placeholderText="Choose a time or type manually (e.g., 12:30 PM)"
           />
         </div>
       )}

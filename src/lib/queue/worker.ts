@@ -147,7 +147,9 @@ export async function processWaitingJobs() {
     const now = Date.now()
 
     let processedCount = 0
+    let promotedCount = 0
 
+    // Step 1: Promote delayed jobs that are ready
     for (const job of delayedJobs) {
       // Check if job is ready to run (delay has passed)
       const jobDelay = job.opts.delay || 0
@@ -155,35 +157,52 @@ export async function processWaitingJobs() {
       const jobReadyTime = jobCreatedAt + jobDelay
 
       if (now >= jobReadyTime) {
-        console.log(`[Worker] Processing delayed job ${job.id}`)
+        console.log(`[Worker] Job ${job.id} is ready (scheduled for ${new Date(jobReadyTime).toISOString()})`)
         try {
           // Promote delayed job to waiting
           await job.promote()
-          processedCount++
+          promotedCount++
+          console.log(`[Worker] Promoted job ${job.id} to waiting`)
         } catch (error: any) {
           console.error(`[Worker] Error promoting job ${job.id}:`, error.message)
         }
       }
     }
 
-    // Process waiting jobs
-    const waitingJobs = await queue.getWaiting(0, 10) // Process up to 10 waiting jobs per run
+    // Step 2: Get ALL waiting jobs (including just-promoted ones)
+    const waitingJobs = await queue.getWaiting(0, 50) // Increased limit to catch promoted jobs
 
+    console.log(`[Worker] Found ${waitingJobs.length} waiting job(s) to process`)
+
+    // Step 3: Process each waiting job
     for (const job of waitingJobs) {
       try {
         console.log(`[Worker] Processing waiting job ${job.id}`)
-        await processPublishPost(job)
+        const result = await processPublishPost(job)
+
+        // Explicitly mark job as completed and remove it
+        await job.moveToCompleted(result, true) // true = remove the job
         processedCount++
+
+        console.log(`[Worker] Job ${job.id} completed successfully`)
       } catch (error: any) {
         console.error(`[Worker] Error processing job ${job.id}:`, error.message)
+
+        // Move to failed state - Bull will handle retries based on attempts config
+        try {
+          await job.moveToFailed({ message: error.message }, true)
+        } catch (moveError: any) {
+          console.error(`[Worker] Error moving job ${job.id} to failed:`, moveError.message)
+        }
       }
     }
 
-    console.log(`[Worker] Processed ${processedCount} job(s)`)
+    console.log(`[Worker] Promoted: ${promotedCount}, Processed: ${processedCount} job(s)`)
 
     return {
       success: true,
       processed: processedCount,
+      promoted: promotedCount,
       delayedChecked: delayedJobs.length,
       waitingChecked: waitingJobs.length,
     }
