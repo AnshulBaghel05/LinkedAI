@@ -11,8 +11,6 @@ import WorkspaceSwitcher from '@/components/workspaces/workspace-switcher'
 import NotificationBell from '@/components/notifications/notification-bell'
 import { useUserPlan } from '@/hooks/useUserPlan'
 import { canAccessRoute } from '@/lib/plans/features'
-import { useScheduledPostsPolling } from '@/hooks/useScheduledPostsPolling'
-import toast from 'react-hot-toast'
 
 // Dashboard requires authentication, disable static generation
 export const dynamic = 'force-dynamic'
@@ -51,17 +49,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname()
   const supabase = createClient()
   const { plan, loading: planLoading } = useUserPlan()
-
-  // Enable client-side polling for scheduled posts
-  const { lastChecked } = useScheduledPostsPolling({
-    enabled: true,
-    interval: 60000, // Check every 60 seconds
-    onPublish: (result) => {
-      toast.success(`🎉 Published ${result.published} scheduled post(s) to LinkedIn!`, {
-        duration: 5000,
-      })
-    },
-  })
 
   useEffect(() => {
     const checkAuth = async () => {
